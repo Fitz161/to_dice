@@ -25,4 +25,4 @@ def message():
 if __name__ == '__main__':
     logging.log(logging.INFO,f'机器人开始运行，监听端口：{PORT}')
     handle_message(message_queue)
-    bot.run(host='0.0.0.0', port=PORT)
+    bot.run(port=PORT)
