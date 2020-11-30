@@ -1,3 +1,4 @@
+import threading
 from flask import Flask, request
 import logging, os, json
 from queue import Queue
@@ -5,14 +6,14 @@ from main_handle import handle_message
 from config import PORT
 
 # 去除flask提示
-os.environ['WERKZEUG_RUN_MAIN'] = "true"
+#os.environ['WERKZEUG_RUN_MAIN'] = "true"
 # 去除 Flask的log
 logging.getLogger('werkzeug').setLevel(logging.ERROR)
 
 bot = Flask(__name__)
 message_queue = Queue()
 
-@bot.route('/message')
+@bot.route('/api/message',methods=['POST'])
 def message():
     data = request.get_data().decode('utf-8')
     data = json.loads(data)
@@ -23,6 +24,7 @@ def message():
 
 
 if __name__ == '__main__':
-    logging.log(logging.INFO,f'机器人开始运行，监听端口：{PORT}')
-    handle_message(message_queue)
+    #logging.log(logging.INFO,f'机器人开始运行，监听端口：{PORT}')
+    threading.Thread(target=handle_message, args=(message_queue,)).start()
+    #handle_message(message_queue)
     bot.run(port=PORT)
