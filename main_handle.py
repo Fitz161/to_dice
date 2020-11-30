@@ -1,13 +1,12 @@
 from queue import Queue
-import json, time
+import json, time, threading
 from time import sleep
 from command import *
 
 
 def get_message(message_queue: Queue):
     if not message_queue.empty():
-        message = json.loads(message_queue.get())
-        message_info = extract_message(message)
+        message_info = extract_message(message_queue.get())
         print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()), end=' ')
         print('收到消息:', message_info.get('sender_qq'), ':  ', message_info.get('message'))
         if message_info['group_qq'] in BLACK_LIST or message_info['sender_qq'] in BLACK_LIST:
@@ -31,7 +30,7 @@ def extract_message(message: dict):
     message_info['is_notice'] = True if post_type == 'notice' else False
     message_info['is_group'] = True if message_type == 'group' else False
     message_info['is_private'] = True if message_type == 'private' else False
-    #message_info['is_anonymous'] = True if message.get('anonymous') else False
+    message_info['is_anonymous'] = True if message.get('anonymous') else False
     message_info['message'] = message.get('message')
     message_info['group_qq'] = message.get('group_id')
     message_info['sender_qq'] = message.get('user_id')
@@ -43,18 +42,19 @@ def extract_message(message: dict):
 
 def handle_message(message_queue: Queue):
     while True:
+        print(1,end=' ')
         if not message_queue.empty():
             message_info: dict = get_message(message_queue)
-            if not message_info:
+            if message_info:
                 message = message_info['message']
-                # is_private = message_info['is_private']
-                # is_group = message_info['is_group']
-                # group_qq = message_info.get('group_qq')
                 if message[:2] in command_dict.keys():
+                    #threading.Thread(target=command_dict.get(message[:2]), args=(message_info,)).start()
                     command_dict.get(message[:2])(message_info)
                 elif message[:3] in command_dict.keys():
+                    #threading.Thread(target=command_dict.get(message[:3]), args=(message_info,)).start()
                     command_dict.get(message[:3])(message_info)
                 elif message in admin_command_dict.keys() and message_info['sender_qq'] in ADMIN_LIST:
+                    #threading.Thread(target=admin_command_dict.get(message[:2]), args=(message_info,)).start()
                     admin_command_dict.get(message)(message_info)
         else:
             sleep(PAUSE_TIME)
