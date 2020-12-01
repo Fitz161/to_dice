@@ -5,7 +5,6 @@ from random import sample, choices, randint
 import requests
 from json import loads, load, dump
 from bs4 import BeautifulSoup as bp
-from requests import RequestException
 import urllib.parse
 from config import *
 
@@ -62,14 +61,11 @@ def concat_images(image_names, path, type):
     target = Image.new('RGB', (UNIT_WIDTH_SIZE * COL, UNIT_HEIGHT_SIZE * ROW))
     for row in range(ROW):
         for col in range(COL):
-            target.paste(image_files[COL * row + col],
-                         (0 + UNIT_WIDTH_SIZE * col,
-                          0 + UNIT_HEIGHT_SIZE * row))
+            target.paste(image_files[COL * row + col], (0 + UNIT_WIDTH_SIZE * col, 0 + UNIT_HEIGHT_SIZE * row))
     if COL == 10:
         width = target.size[0]
         height = target.size[1]
-        target = target.resize(
-            (int(width * 0.5), int(height * 0.5)), Image.ANTIALIAS)
+        target = target.resize((int(width * 0.5), int(height * 0.5)), Image.ANTIALIAS)
     target.save(SAVE_PATH, quality=SAVE_QUALITY)
 
 
@@ -246,7 +242,7 @@ def get_one_page(url):
         else:
             # print(response.status_code)
             return "failed"
-    except RequestException as e:
+    except requests.RequestException as e:
         print("request failed: time out", e)
         return "time_out"
 
@@ -261,8 +257,8 @@ def parse_one_page(html, option) -> str:
     string = ''
     for item in content:
         string += item.get_text()
-    print(string[:SEARCH_LIMIT])
-    return string[:SEARCH_LIMIT] + '...'
+    print(string[:SEARCH_LENGTH])
+    return string[:SEARCH_LENGTH] + '...'
 
 
 def search_wiki(message) -> str:
@@ -325,12 +321,9 @@ def search_baidu(message_info: dict):
         content = soup.head.find_all(name='meta')
         try:
             new_message = content[3].attrs["content"]
-        except IndexError:
-            new_message = None
-        if new_message is None:
-            send_string = "搜索 %s 失败\n没有该条目" % message
-        else:
             send_string = "搜索 %s :\n%s" % (message, new_message)
+        except IndexError:
+            send_string = '搜索 %s 失败\n没有该条目' % message
     if message_info['is_private']:
         send_private_msg(send_string, message_info['sender_qq'])
     elif message_info['is_group']:
@@ -338,25 +331,27 @@ def search_baidu(message_info: dict):
 
 
 def parse_song_page(json, message) -> str:
-    list2 = []
+    mid_data_list = []
+    id_data_list = []
     with open(SONG_PATH) as f:
-        dict1: dict = load(f)
-        last_search = dict1['last_search']
-        index = dict1['index']
+        search_dict: dict = load(f)
+        last_search = search_dict['last_search']
+        index = search_dict['index']
     if last_search == message:
         index += 1
     else:
         index = 0
-    dict1['last_search'] = message
-    dict1['index'] = index
-    dump(dict1, open(SONG_PATH, 'w'))
+    search_dict['last_search'] = message
+    search_dict['index'] = index
+    dump(search_dict, open(SONG_PATH, 'w'))
     json = loads(json)
-    list1 = json['data']['song']['list']
-    for item in list1:
-        list2.append(item['mid'])
-    url = r'https://y.qq.com/n/yqq/song/{}.html'.format(list2[index])
-    print(url)
-    return url
+    song_list:list = json['data']['song']['list']
+    for item in song_list:
+        mid_data_list.append(item['mid'])
+        id_data_list.append(item['id'])
+    url = r'https://y.qq.com/n/yqq/song/{}.html'.format(mid_data_list[index])
+    data = f'[CQ:music,type=qq,id={id_data_list[index]}]'
+    return data
 
 
 @add_command('搜索')
@@ -368,11 +363,17 @@ def search_item(message_info: dict):
         return
     item = message[3:].strip()
     if search_type == 1:
-        search_wiki(item)
+        send_string = search_wiki(item)
     elif search_type == 2:
-        search_moegirl(item)
+        send_string = search_moegirl(item)
     elif search_type == 3:
-        search_thwiki(item)
+        send_string = search_thwiki(item)
+    else:
+        return
+    if message_info['is_private']:
+        send_private_msg(send_string, message_info['sender_qq'])
+    elif message_info['is_group']:
+        send_public_msg(send_string, message_info['group_qq'])
 
 
 @add_command('点歌')
@@ -459,14 +460,14 @@ def bot_status()->str:
     api_url = 'http://127.0.0.1:5700/get_status'
     text = requests.post(api_url).json()
     if text['data']['online']:
-        return "\nbot运行正常"
+        return "bot运行正常\n"
     else:
-        return "\nbot已下线"
+        return "bot已下线\n"
 
 
 @add_admin_command('状态')
 def show_status(message_info: dict):
-    send_string = server_stat() + bot_status()
+    send_string = bot_status() + server_stat()
     if message_info['is_private']:
         send_private_msg(send_string, message_info['sender_qq'])
     elif message_info['is_group']:
@@ -481,3 +482,35 @@ def bot_exit(message_info):
     elif message_info['is_group']:
         send_public_msg(send_string, message_info['group_qq'])
     exit()
+
+
+@add_command('热榜')
+def zhihu_hot(message_info):
+    requests.session().keep_alive = False
+    headers = {
+        'Cookie': ZHIHU_COOKIE,
+        "Connection": "close",
+        "User-Agent": r'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36(KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36'}
+    try:
+        response = requests.get(url="https://www.zhihu.com/hot", headers=headers, timeout=8)
+        if response.status_code == 200:
+            soup = bp(response.content, "lxml")
+            titles = soup.find_all(attrs={"class" : "HotItem-title"})
+            hots = soup.find_all(attrs={"class" : "HotItem-metrics HotItem-metrics--bottom"})
+            send_string = '知乎热榜\n'
+            #for index, title, hot in zip(list(range(max(len(titles), len(hots)))), titles, hots):
+            for index, title, hot in zip(list(range(1, ZHIHU_LENGTH + 1)), titles, hots):
+                send_string += str(index) + '.' + title.get_text() + '\n' + hot.get_text()[:-3] + '\n'
+            print(send_string)
+        else:
+            send_string = '获取热榜失败'
+        if message_info['is_private']:
+            send_private_msg(send_string, message_info['sender_qq'])
+        elif message_info['is_group']:
+            send_public_msg(send_string, message_info['group_qq'])
+    except requests.RequestException:
+        send_string = '获取热榜超时,请重试'
+        if message_info['is_private']:
+            send_private_msg(send_string, message_info['sender_qq'])
+        elif message_info['is_group']:
+            send_public_msg(send_string, message_info['group_qq'])
