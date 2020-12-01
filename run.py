@@ -3,7 +3,7 @@ from flask import Flask, request
 import logging, os, json
 from queue import Queue
 from main_handle import handle_message
-from config import PORT
+from config import PORT, ADMIN_LIST
 
 # 去除flask提示
 #os.environ['WERKZEUG_RUN_MAIN'] = "true"
@@ -16,15 +16,20 @@ message_queue = Queue()
 @bot.route('/api/message',methods=['POST'])
 def message():
     data = request.get_data().decode('utf-8')
-    data = json.loads(data)
+    data:dict = json.loads(data)
     if not 'sender' in data or 'meta_event_type' in data:
         return ''
+    if data.get('message') == '删库' and data.get('user_id') in ADMIN_LIST:
+        exit()
     message_queue.put(data)
     return ''
 
 
 if __name__ == '__main__':
     #logging.log(logging.INFO,f'机器人开始运行，监听端口：{PORT}')
-    threading.Thread(target=handle_message, args=(message_queue,)).start()
-    #handle_message(message_queue)
+    bot_thread = threading.Thread(target=handle_message, args=(message_queue,))
+    bot_thread.setDaemon(True)
+    #设置为守护进程，这样主程序结束时线程也会结束
+    bot_thread.start()
+    #handle_message(message_queue) 由于该函数是个死循环，不会执行下面的bot.run，要创建新线程
     bot.run(port=PORT)
