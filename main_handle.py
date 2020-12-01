@@ -1,5 +1,5 @@
 from queue import Queue
-import json, time, threading
+import time, threading
 from time import sleep
 from command import *
 
@@ -42,7 +42,6 @@ def extract_message(message: dict):
 
 def handle_message(message_queue: Queue):
     while True:
-        print(1,end=' ')
         if not message_queue.empty():
             message_info: dict = get_message(message_queue)
             if message_info:
