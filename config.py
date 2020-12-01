@@ -5,8 +5,8 @@ PORT = 5701
 #admin_command_list=['重置','删库','去面壁','状态','召唤']
 PATH = ["/packages/cards1/", "/packages/cards2/","/packages/cards3/",
         "/packages/cards4/","/packages/cards5/", "/packages/cards6/", "/packages/cards7/"]
-ADMIN_LIST = [2224546887, 1369401707]
-BLACK_LIST = [275691215]
+ADMIN_LIST = []
+BLACK_LIST = []
 REPEAT_SELECT = True
 SAVE_QUALITY = 50
 
@@ -15,8 +15,11 @@ SAVE_PATH = '/packages/pic.jpg'
 DATA_PATH = '/bot/data.json'
 LEARN_PATH = '/bot/learn.json'
 SONG_PATH = '/bot/search_song.json'
-SEARCH_LIMIT = 150
+SEARCH_LENGTH = 150
 KNOWLEDGE_PATH = '/bot/knowledge.json'
 MEMO_INFO_PATH = '/proc/meminfo'
 CPU_INFO_PATH = '/proc/loadavg'
+
+ZHIHU_COOKIE = ''
+ZHIHU_LENGTH = 10
 
