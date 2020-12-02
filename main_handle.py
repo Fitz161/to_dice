@@ -14,17 +14,19 @@ def get_message(message_queue: Queue):
         print('收到消息:', message_info.get('sender_qq'), ':  ', message_info.get('message'))
         if message_info['group_qq'] in BLACK_LIST or message_info['sender_qq'] in BLACK_LIST:
             return None
-        elif not message_info['is_notice'] and not message_info['is_anonymous']:
+        elif not message_info['is_notice'] and not message_info['is_anonymous'] and not message_info['is_request']:
             return message_info
         elif message_info['is_notice'] :
             if message_info['is_group_increase']:
                 event_handle.welcome(message_info)
-            elif message_info['is_friend_add']:
+            elif message_info['is_group_recall']:
+                event_handle.group_recall(message_info)
+            return None
+        elif message_info['is_request']:
+            if message_info['is_friend_add']:
                 event_handle.friend_add_request(message_info)
             elif message_info['is_group_add']:
                 event_handle.friend_add_request(message_info)
-            elif message_info['is_group_recall']:
-                event_handle.group_recall(message_info)
             return None
 
 
@@ -48,9 +50,10 @@ def extract_message(message: dict):
     message_info['raw_message'] = message.get('raw_message')
     #message_info['bot_qq'] = str(message.get('self_id'))
     message_info['is_group_increase'] = True if notice_type == 'group_increase' else False
+    message_info['is_group_recall'] = True if notice_type == 'group_recall' else False
     message_info['is_friend_add'] = True if  request_type == 'friend' else False
     message_info['is_group_add'] = True if request_type == 'group' and message.get('sub_type') == 'invite' else False
-    message_info['is_group_recall'] = True if message.get('notice_type') == 'group_recall' else False
+
     return message_info
 
 
