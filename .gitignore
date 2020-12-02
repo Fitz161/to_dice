@@ -2,3 +2,6 @@
 .pytest_cache
 .idea/
 v/
+new_command/
+test.py
+__pycache__/
