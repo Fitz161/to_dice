@@ -1,7 +1,10 @@
 from queue import Queue
 import time, threading
 from time import sleep
-from command import *
+
+from command import event_handle
+from command.command import *
+from  command.admin_command import *
 
 
 def get_message(message_queue: Queue):
@@ -13,20 +16,24 @@ def get_message(message_queue: Queue):
             return None
         elif not message_info['is_notice'] and not message_info['is_anonymous']:
             return message_info
-            # if user_queue.get(user_qq) is None:
-            #     user_queue[user_qq] = Queue()
-            # user_queue[user_qq].put(message_info)
-        elif message_info['is_notice'] and message_info['is_group_increase']:
+        elif message_info['is_notice'] :
+            if message_info['is_group_increase']:
+                event_handle.welcome(message_info)
+            elif message_info['is_friend_add']:
+                event_handle.friend_add_request(message_info)
+            elif message_info['is_group_add']:
+                event_handle.friend_add_request(message_info)
+            elif message_info['is_group_recall']:
+                event_handle.group_recall(message_info)
             return None
-            # bot_function.welcome(user_qq,group_qq)
-        elif message_info['is_request'] and message_info['request_type'] == 'friend':
-            pass
 
 
 def extract_message(message: dict):
     message_info = {}
     post_type = message.get('post_type')
     message_type = message.get('message_type')
+    notice_type = message.get('notice_type')
+    request_type = message.get('request_type')
     #message_info['message_id'] = message.get('message_id') if message.get('message_id') else 0
     message_info['is_message'] = True if post_type == 'message' else False
     message_info['is_notice'] = True if post_type == 'notice' else False
@@ -34,13 +41,16 @@ def extract_message(message: dict):
     message_info['is_group'] = True if message_type == 'group' else False
     message_info['is_private'] = True if message_type == 'private' else False
     message_info['is_anonymous'] = True if message.get('anonymous') else False
-    message_info['request_type'] = message.get('request_type')
+    message_info['flag'] = message.get('flag')
     message_info['message'] = message.get('message')
     message_info['group_qq'] = message.get('group_id')
     message_info['sender_qq'] = message.get('user_id')
     message_info['raw_message'] = message.get('raw_message')
     #message_info['bot_qq'] = str(message.get('self_id'))
-    message_info['is_group_increase'] = True if message.get('notice_type') == 'group_increase' else False
+    message_info['is_group_increase'] = True if notice_type == 'group_increase' else False
+    message_info['is_friend_add'] = True if  request_type == 'friend' else False
+    message_info['is_group_add'] = True if request_type == 'group' and message.get('sub_type') == 'invite' else False
+    message_info['is_group_recall'] = True if message.get('notice_type') == 'group_recall' else False
     return message_info
 
 
