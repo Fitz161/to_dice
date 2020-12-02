@@ -1,2 +1,2 @@
-# python_bot
+#基于go-cqhttp的python bot
  
