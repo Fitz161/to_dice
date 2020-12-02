@@ -19,6 +19,8 @@ def get_message(message_queue: Queue):
         elif message_info['is_notice'] and message_info['is_group_increase']:
             return None
             # bot_function.welcome(user_qq,group_qq)
+        elif message_info['is_request'] and message_info['request_type'] == 'friend':
+            pass
 
 
 def extract_message(message: dict):
@@ -28,9 +30,11 @@ def extract_message(message: dict):
     #message_info['message_id'] = message.get('message_id') if message.get('message_id') else 0
     message_info['is_message'] = True if post_type == 'message' else False
     message_info['is_notice'] = True if post_type == 'notice' else False
+    message_info['is_request'] = True if post_type == 'request' else False
     message_info['is_group'] = True if message_type == 'group' else False
     message_info['is_private'] = True if message_type == 'private' else False
     message_info['is_anonymous'] = True if message.get('anonymous') else False
+    message_info['request_type'] = message.get('request_type')
     message_info['message'] = message.get('message')
     message_info['group_qq'] = message.get('group_id')
     message_info['sender_qq'] = message.get('user_id')
@@ -52,6 +56,9 @@ def handle_message(message_queue: Queue):
                 elif message[:3] in command_dict.keys():
                     #threading.Thread(target=command_dict.get(message[:3]), args=(message_info,)).start()
                     command_dict.get(message[:3])(message_info)
+                elif message[0] in command_dict.keys():
+                    # threading.Thread(target=command_dict.get(message[:3]), args=(message_info,)).start()
+                    command_dict.get(message[0])(message_info)
                 elif message in admin_command_dict.keys() and message_info['sender_qq'] in ADMIN_LIST:
                     #threading.Thread(target=admin_command_dict.get(message[:2]), args=(message_info,)).start()
                     admin_command_dict.get(message)(message_info)

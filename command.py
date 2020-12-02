@@ -25,6 +25,10 @@ def add_admin_command(command):
         admin_command_dict[command] = func
     return add_func
 
+def dot_command(command):
+    def add_func(func):
+        admin_command_dict[command] = func
+    return add_func
 
 def send_private_msg(send_string, QQ):
     data = {
@@ -514,3 +518,29 @@ def zhihu_hot(message_info):
             send_private_msg(send_string, message_info['sender_qq'])
         elif message_info['is_group']:
             send_public_msg(send_string, message_info['group_qq'])
+
+
+def dot_send_msg(message_info:dict):
+    raw_message = message_info['message'][5:].strip()
+    if message_info['is_group']:
+        api_url = 'http://127.0.0.1:5700/get_group_info'
+        data = {
+            'group_id':message_info.get('group_qq')
+        }
+        response = requests.post(api_url,data=data)
+        if response.status_code == 200:
+            group_name = response.json()['data']['group_name']
+            send_string = f'来自群:{group_name},QQ:{message_info["sender_qq"]}的消息:\n{raw_message}'
+            send_private_msg(send_string, ADMIN_LIST[0])
+        else:
+            return
+    else:
+        send_string = f'来自QQ:{message_info["sender_qq"]}的消息:\n{raw_message}'
+        send_private_msg(send_string, ADMIN_LIST[0])
+
+
+@add_command('.')
+def send_admin_msg(message_info):
+    message:str = message_info['message']
+    if message[:5] == '.sens':
+        dot_send_msg(message_info)
