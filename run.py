@@ -12,15 +12,22 @@ logging.getLogger('werkzeug').setLevel(logging.ERROR)
 
 bot = Flask(__name__)
 message_queue = Queue()
+IS_ACTIVE = True
 
 @bot.route('/api/message',methods=['POST'])
 def message():
     data = request.get_data().decode('utf-8')
     data:dict = json.loads(data)
-    if not 'sender' in data or 'meta_event_type' in data:
+    if 'meta_event_type' in data:
         return ''
     if data.get('message') == '删库' and data.get('user_id') in ADMIN_LIST:
         exit()
+    elif data.get('message') == '关闭' and data.get('user_id') in ADMIN_LIST:
+        global IS_ACTIVE
+        IS_ACTIVE = False
+    elif data.get('message') == '召唤' and data.get('user_id') in ADMIN_LIST:
+        global IS_ACTIVE
+        IS_ACTIVE = True
     message_queue.put(data)
     return ''
 
