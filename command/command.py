@@ -469,8 +469,19 @@ def dot_send_msg(message_info:dict):
         send_private_msg(send_string, ADMIN_LIST[0])
 
 
+def show_command_doc(message_info):
+    send_string = '签到/打卡\n单抽/十连/百连1-7\n要礼物\n冷知识 点歌\n'\
+                  '搜索格式:\n百度/搜索1-3 内容\n百度：百度百科\n搜索1'\
+                  '：wikipedia(暂不可用)\n搜索2：萌娘百科\n搜索3：touhouwiki'
+    if message_info['is_private']:
+        send_private_msg(send_string, message_info['sender_qq'])
+    elif message_info['is_group']:
+        send_public_msg(send_string, message_info['group_qq'])
+
 @add_command('.')
 def send_admin_msg(message_info):
     message:str = message_info['message']
     if message[:5] == '.sens':
         dot_send_msg(message_info)
+    if message == '.help':
+        show_command_doc(message_info)
