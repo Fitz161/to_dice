@@ -12,13 +12,15 @@ def welcome(message_info:dict):
         'group_id': group_qq
     }
     response = requests.post(api_url, data=data)
-    if response.status_code == 200:
+    if response.status_code == 200 and QQ != message_info['bot_qq']:
         group_name = response.json()['data']['group_name']
         send_string = f'欢迎[CQ:at,qq={QQ}]来到{group_name}这个大家庭'
         send_public_msg(send_string, group_qq)
 
+
 def group_recall(message_info:dict):
     pass
+
 
 def friend_add_request(message_info:dict):
     QQ = message_info['sender_qq']
