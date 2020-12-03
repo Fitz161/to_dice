@@ -35,7 +35,7 @@ def friend_add_request(message_info:dict):
 def group_add_request(message_info:dict):
     group_qq = message_info["group_qq"]
     data = {
-        'flag': message_info['flag'],
+        'flag': message_info['flag']
     }
     response = requests.post(apiBaseUrl + apiGroupRequest, data=data)
     if response.status_code == 200:
