@@ -35,9 +35,7 @@ def message():
 
 if __name__ == '__main__':
     #logging.log(logging.INFO,f'机器人开始运行，监听端口：{PORT}')
-    bot_thread = threading.Thread(target=handle_message, args=(message_queue,))
-    bot_thread.setDaemon(True)
+    threading.Thread(target=handle_message, args=(message_queue,), daemon=True).start()
     #设置为守护进程，这样主程序结束时线程也会结束
-    bot_thread.start()
     #handle_message(message_queue) 由于该函数是个死循环，不会执行下面的bot.run，要创建新线程
     bot.run(port=PORT)
