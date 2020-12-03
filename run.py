@@ -18,16 +18,17 @@ IS_ACTIVE = True
 def message():
     data = request.get_data().decode('utf-8')
     data:dict = json.loads(data)
+    global IS_ACTIVE
     if 'meta_event_type' in data:
         return ''
-    if data.get('message') == '删库' and data.get('user_id') in ADMIN_LIST:
-        exit()
-    elif data.get('message') == '关闭' and data.get('user_id') in ADMIN_LIST:
-        global IS_ACTIVE
-        IS_ACTIVE = False
     elif data.get('message') == '召唤' and data.get('user_id') in ADMIN_LIST:
-        global IS_ACTIVE
         IS_ACTIVE = True
+    elif not IS_ACTIVE:
+        return ''
+    elif data.get('message') == '删库' and data.get('user_id') in ADMIN_LIST:
+        exit()
+    elif data.get('message') == '去面壁' and data.get('user_id') in ADMIN_LIST:
+        IS_ACTIVE = False
     message_queue.put(data)
     return ''
 
