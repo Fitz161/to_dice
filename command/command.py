@@ -1,5 +1,6 @@
 # encoding=utf8
 import os
+import threading
 from PIL import Image
 from random import sample, choices, randint
 import requests
@@ -7,6 +8,7 @@ from json import loads, load, dump
 from bs4 import BeautifulSoup as bp
 import urllib.parse
 from config import *
+from command.dot_command import *
 
 
 command_dict = {}
@@ -63,7 +65,8 @@ def concat_images(image_names, path, type):
         width = target.size[0]
         height = target.size[1]
         target = target.resize((int(width * 0.5), int(height * 0.5)), Image.ANTIALIAS)
-    target.save(SAVE_PATH, quality=SAVE_QUALITY)
+    pic_name = threading.current_thread().name
+    target.save(SAVE_PATH + pic_name + '.jpg', quality=SAVE_QUALITY)
 
 
 def get_image_names(path, type: int):
@@ -83,7 +86,7 @@ def single_draw(message_info):
         return
     if card_type > 0 and card_type < 8:
         concat_images(get_image_names(
-            PATH[card_type - 1], type=0), PATH[card_type - 1], type=0)
+            CARD_PATH[card_type - 1], type=0), CARD_PATH[card_type - 1], type=0)
         print("图片生成成功")
         send_string = f"[CQ:image,file=file://{SAVE_PATH}]"
         if message_info['is_private']:
@@ -101,7 +104,7 @@ def dozen_draw(message_info):
         return
     if card_type > 0 and card_type < 8:
         concat_images(get_image_names(
-            PATH[card_type - 1], type=1), PATH[card_type - 1], type=1)
+            CARD_PATH[card_type - 1], type=1), CARD_PATH[card_type - 1], type=1)
         print("图片生成成功")
         send_string = f"[CQ:image,file=file://{SAVE_PATH}]"
         if message_info['is_private']:
@@ -119,7 +122,7 @@ def dozen_draw(message_info):
         return
     if card_type > 0 and card_type < 8:
         concat_images(get_image_names(
-            PATH[card_type - 1], type=2), PATH[card_type - 1], type=2)
+            CARD_PATH[card_type - 1], type=2), CARD_PATH[card_type - 1], type=2)
         print("图片生成成功")
         send_string = f"[CQ:image,file=file://{SAVE_PATH}]"
         if message_info['is_private']:
@@ -207,7 +210,7 @@ def learn(message_info: dict):
 
 @add_command('指令')
 def show_command(message_info: dict):
-    send_string = "签到/打卡\n单抽/十连/百连1-7\n搜索1-3/百度\n要红包/要礼物\n冷知识 点歌"
+    send_string = "签到/打卡\n单抽/十连/百连1-7\n搜索1-3/百度\n要红包 热榜\n冷知识 点歌"
     if message_info['is_private']:
         send_private_msg(send_string, message_info['sender_qq'])
     elif message_info['is_group']:
@@ -449,34 +452,6 @@ def zhihu_hot(message_info):
         elif message_info['is_group']:
             send_public_msg(send_string, message_info['group_qq'])
 
-
-def dot_send_msg(message_info:dict):
-    raw_message = message_info['message'][5:].strip()
-    if message_info['is_group']:
-        api_url = apiBaseUrl + apiGroupInfo
-        data = {
-            'group_id':message_info.get('group_qq')
-        }
-        response = requests.post(api_url,data=data)
-        if response.status_code == 200:
-            group_name = response.json()['data']['group_name']
-            send_string = f'来自群:{group_name},QQ:{message_info["sender_qq"]}的消息:\n{raw_message}'
-            send_private_msg(send_string, ADMIN_LIST[0])
-        else:
-            return
-    else:
-        send_string = f'来自QQ:{message_info["sender_qq"]}的消息:\n{raw_message}'
-        send_private_msg(send_string, ADMIN_LIST[0])
-
-
-def show_command_doc(message_info):
-    send_string = '签到/打卡\n单抽/十连/百连1-7\n要礼物\n冷知识 点歌\n'\
-                  '搜索格式:\n百度/搜索1-3 内容\n百度：百度百科\n搜索1'\
-                  '：wikipedia(暂不可用)\n搜索2：萌娘百科\n搜索3：touhouwiki'
-    if message_info['is_private']:
-        send_private_msg(send_string, message_info['sender_qq'])
-    elif message_info['is_group']:
-        send_public_msg(send_string, message_info['group_qq'])
 
 @add_command('.')
 def send_admin_msg(message_info):
