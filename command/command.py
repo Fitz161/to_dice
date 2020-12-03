@@ -458,7 +458,9 @@ def zhihu_hot(message_info):
 @add_command('.')
 def send_admin_msg(message_info):
     message:str = message_info['message']
-    if message[:5] == '.sens':
+    if message[:5] == '.send':
         dot_send_msg(message_info)
     if message == '.help':
         show_command_doc(message_info)
+    if message[:7] == '.phasor':
+        calculate_phasor(message_info)
