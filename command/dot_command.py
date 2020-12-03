@@ -1,6 +1,8 @@
+import requests
+
 from config import apiBaseUrl, apiGroupInfo, ADMIN_LIST
 from command.command import send_public_msg, send_private_msg
-import requests
+
 
 def dot_send_msg(message_info:dict):
     raw_message = message_info['message'][5:].strip()
