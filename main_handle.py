@@ -1,16 +1,17 @@
 from queue import Queue
-import time, threading
-from time import sleep
+import  threading
+from time import sleep, localtime, strftime
 
 from command import event_handle
 from command.command import *
 from  command.admin_command import *
+from config import MULTI_THREADING
 
 
 def get_message(message_queue: Queue):
     if not message_queue.empty():
         message_info = extract_message(message_queue.get())
-        print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()), end=' ')
+        print(strftime("%Y-%m-%d %H:%M:%S", localtime()), end=' ')
         print('收到 ', message_info.get('sender_qq'), '消息:', message_info.get('message'))
         if message_info['group_qq'] in BLACK_LIST or message_info['sender_qq'] in BLACK_LIST:
             return None
@@ -48,7 +49,7 @@ def extract_message(message: dict):
     message_info['group_qq'] = message.get('group_id')
     message_info['sender_qq'] = message.get('user_id')
     message_info['raw_message'] = message.get('raw_message')
-    #message_info['bot_qq'] = str(message.get('self_id'))
+    message_info['bot_qq'] = str(message.get('self_id'))
     message_info['is_group_increase'] = True if notice_type == 'group_increase' else False
     message_info['is_group_recall'] = True if notice_type == 'group_recall' else False
     message_info['is_friend_add'] = True if  request_type == 'friend' else False
@@ -63,17 +64,23 @@ def handle_message(message_queue: Queue):
             message_info: dict = get_message(message_queue)
             if message_info:
                 message = message_info['message']
-                if message[:2] in command_dict.keys():
-                    #threading.Thread(target=command_dict.get(message[:2]), args=(message_info,)).start()
-                    command_dict.get(message[:2])(message_info)
-                elif message[:3] in command_dict.keys():
-                    #threading.Thread(target=command_dict.get(message[:3]), args=(message_info,)).start()
-                    command_dict.get(message[:3])(message_info)
-                elif message[0] in command_dict.keys():
-                    # threading.Thread(target=command_dict.get(message[:3]), args=(message_info,)).start()
-                    command_dict.get(message[0])(message_info)
-                elif message in admin_command_dict.keys() and message_info['sender_qq'] in ADMIN_LIST:
-                    #threading.Thread(target=admin_command_dict.get(message[:2]), args=(message_info,)).start()
-                    admin_command_dict.get(message)(message_info)
+                if not MULTI_THREADING:
+                    if message[:2] in command_dict.keys():
+                        command_dict.get(message[:2])(message_info)
+                    elif message[:3] in command_dict.keys():
+                        command_dict.get(message[:3])(message_info)
+                    elif message[0] in command_dict.keys():
+                        command_dict.get(message[0])(message_info)
+                    elif message in admin_command_dict.keys() and message_info['sender_qq'] in ADMIN_LIST:
+                        admin_command_dict.get(message)(message_info)
+                else:
+                    if message[:2] in command_dict.keys():
+                        threading.Thread(target=command_dict.get(message[:2]), args=(message_info,)).start()
+                    elif message[:3] in command_dict.keys():
+                        threading.Thread(target=command_dict.get(message[:3]), args=(message_info,)).start()
+                    elif message[0] in command_dict.keys():
+                        threading.Thread(target=command_dict.get(message[0]), args=(message_info,)).start()
+                    elif message in admin_command_dict.keys() and message_info['sender_qq'] in ADMIN_LIST:
+                        threading.Thread(target=admin_command_dict.get(message), args=(message_info,)).start()
         else:
             sleep(PAUSE_TIME)
