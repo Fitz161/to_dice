@@ -11,7 +11,7 @@ def get_message(message_queue: Queue):
     if not message_queue.empty():
         message_info = extract_message(message_queue.get())
         print(time.strftime("%Y-%m-%d %H:%M:%S", time.localtime()), end=' ')
-        print('收到消息:', message_info.get('sender_qq'), ':  ', message_info.get('message'))
+        print('收到 ', message_info.get('sender_qq'), '消息:', message_info.get('message'))
         if message_info['group_qq'] in BLACK_LIST or message_info['sender_qq'] in BLACK_LIST:
             return None
         elif not message_info['is_notice'] and not message_info['is_anonymous'] and not message_info['is_request']:
@@ -26,7 +26,7 @@ def get_message(message_queue: Queue):
             if message_info['is_friend_add']:
                 event_handle.friend_add_request(message_info)
             elif message_info['is_group_add']:
-                event_handle.friend_add_request(message_info)
+                event_handle.group_add_request(message_info)
             return None
 
 
