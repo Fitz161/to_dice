@@ -3,12 +3,12 @@ import os
 import threading
 from PIL import Image
 from random import sample, choices, randint
-import requests
 from json import loads, load, dump
 from bs4 import BeautifulSoup as bp
 import urllib.parse
+
 from config import *
-from command.dot_command import *
+#from command.dot_command import *
 
 
 command_dict = {}
@@ -48,6 +48,8 @@ def send_public_msg(send_string, group_qq):
     if response.status_code == 200:
         print("消息发送成功")
 
+from command.dot_command import *
+#避免command和dot_command两个文件循环import
 
 def concat_images(image_names, path, type):
     COL = [1, 5, 10][type]
