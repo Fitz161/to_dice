@@ -8,7 +8,6 @@ from bs4 import BeautifulSoup as bp
 import urllib.parse
 
 from config import *
-#from command.dot_command import *
 
 
 command_dict = {}
@@ -463,7 +462,10 @@ def send_admin_msg(message_info):
     message:str = message_info['message']
     if message[:5] == '.send':
         dot_send_msg(message_info)
-    if message == '.help':
+    elif message == '.help':
         show_command_doc(message_info)
-    if message[:7] == '.phasor':
+    elif message[:7] == '.phasor':
         calculate_phasor(message_info)
+    from command.event_handle import get_group_admin, leave_group
+    if message[:5] == '.leaving' and message_info['sender_qq'] in get_group_admin(message_info):
+        leave_group(message_info)
