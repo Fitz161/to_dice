@@ -467,5 +467,8 @@ def send_admin_msg(message_info):
     elif message[:7] == '.phasor':
         calculate_phasor(message_info)
     from command.event_handle import get_group_admin, leave_group
-    if message[:5] == '.leaving' and message_info['sender_qq'] in get_group_admin(message_info):
-        leave_group(message_info)
+    if message[:8] == '.leaving':
+        if message_info['sender_qq'] in get_group_admin(message_info):
+            leave_group(message_info)
+        else:
+            send_public_msg('请让管理员发送该命令', message_info['group_qq'])
