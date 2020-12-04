@@ -4,9 +4,11 @@ from time import sleep
 from config import *
 from command.command import send_public_msg, send_private_msg
 
-def get_group_admin(group_qq):
+def get_group_admin(message_info):
+    if not message_info['is_group']:
+        return
     data = {
-        'group_id':group_qq
+        'group_id':message_info['group_qq']
     }
     admin_list = []
     members:list = requests.post(apiBaseUrl + apiGroupMemberList, data=data).json()['data']
