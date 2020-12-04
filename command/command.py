@@ -90,7 +90,8 @@ def single_draw(message_info):
         concat_images(get_image_names(
             CARD_PATH[card_type - 1], type=0), CARD_PATH[card_type - 1], type=0)
         print("图片生成成功")
-        send_string = f"[CQ:image,file=file://{SAVE_PATH}]"
+        pic_path = SAVE_PATH + threading.current_thread().name + '.jpg'
+        send_string = f"[CQ:image,file=file://{pic_path}]"
         if message_info['is_private']:
             send_private_msg(send_string, message_info['sender_qq'])
         elif message_info['is_group']:
@@ -108,7 +109,8 @@ def dozen_draw(message_info):
         concat_images(get_image_names(
             CARD_PATH[card_type - 1], type=1), CARD_PATH[card_type - 1], type=1)
         print("图片生成成功")
-        send_string = f"[CQ:image,file=file://{SAVE_PATH}]"
+        pic_path = SAVE_PATH + threading.current_thread().name + '.jpg'
+        send_string = f"[CQ:image,file=file://{pic_path}]"
         if message_info['is_private']:
             send_private_msg(send_string, message_info['sender_qq'])
         elif message_info['is_group']:
@@ -126,7 +128,8 @@ def dozen_draw(message_info):
         concat_images(get_image_names(
             CARD_PATH[card_type - 1], type=2), CARD_PATH[card_type - 1], type=2)
         print("图片生成成功")
-        send_string = f"[CQ:image,file=file://{SAVE_PATH}]"
+        pic_path = SAVE_PATH + threading.current_thread().name + '.jpg'
+        send_string = f"[CQ:image,file=file://{pic_path}]"
         if message_info['is_private']:
             send_private_msg(send_string, message_info['sender_qq'])
         elif message_info['is_group']:
