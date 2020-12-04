@@ -1,7 +1,18 @@
 import requests
 from time import sleep
-from config import apiBaseUrl, apiFriendRequest, apiGroupRequest, apiGroupInfo
+
+from config import *
 from command.command import send_public_msg, send_private_msg
+
+def get_group_admin(group_qq):
+    data = {
+        'group_id':group_qq
+    }
+    admin_list = []
+    members:list = requests.post(apiBaseUrl + apiGroupMemberList, data=data).json()['data']
+    for member in members:
+        admin_list.append(member['user_id']) if member['role'] == 'admin' or member['role'] == 'owner' else None
+    return admin_list
 
 
 def welcome(message_info:dict):
@@ -44,3 +55,29 @@ def group_add_request(message_info:dict):
         print(f'添加群{group_qq}')
         sleep(2)
         send_public_msg('Botです。\n输入.help查看帮助', group_qq)
+
+
+def add_black_list(message_info):
+    from json import load, dump
+    with open(BLACK_LIST_PATH) as f:
+        total_data: dict = load(f)
+    black_list: list = total_data['black_list']
+    group_qq = message_info.get('group_qq')
+    black_list.append(group_qq) if group_qq not in black_list else None
+    total_data['black_list'] = black_list
+    with open(BLACK_LIST_PATH, 'w') as f:
+        dump(total_data, f)
+
+def leave_group(message_info):
+    group_qq = message_info.get('group_qq')
+    data = {
+        'group_id': group_qq
+    }
+    response = requests.post(apiBaseUrl + apiSetGroupLeave, data=data)
+    if response.status_code == 200:
+        print(f'已离开群{group_qq}')
+
+
+def group_ban(message_info):
+    add_black_list(message_info)
+    leave_group(message_info)
