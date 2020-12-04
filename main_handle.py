@@ -12,10 +12,8 @@ def get_message(message_queue: Queue):
         message_info = extract_message(message_queue.get())
         print(strftime("%Y-%m-%d %H:%M:%S", localtime()), end=' ')
         print('收到 ', message_info.get('sender_qq'), '消息:', message_info.get('message'))
-        print(message_info)
         with open(BLACK_LIST_PATH) as f:
             black_list:list = load(f)['black_list']
-            print(black_list)
         if message_info['group_qq'] in black_list or message_info['sender_qq'] in black_list:
             return None
         elif not message_info['is_notice'] and not message_info['is_anonymous'] and not message_info['is_request']:
@@ -57,7 +55,7 @@ def extract_message(message: dict):
     message_info['sender_qq'] = message.get('user_id')
     message_info['sub_type'] = message.get('sub_type')
     message_info['raw_message'] = message.get('raw_message')
-    message_info['bot_qq'] = str(message.get('self_id'))
+    message_info['bot_qq'] = message.get('self_id')
     message_info['is_group_increase'] = True if notice_type == 'group_increase' else False
     message_info['is_group_kick'] = True if notice_type == 'group_decrease' \
                                             and message_info['sub_type'] == 'kick_me' else False
