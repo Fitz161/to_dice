@@ -39,9 +39,9 @@ def calculate_phasor(message_info):
     if raw_message[0] == '+':
         try:
             args:list = list(map(lambda x:int(x), raw_message[1:].split()))
-            real = args[0]*cos(radians(args[1])) + args[2]*cos(radians(args[3]))
-            imag = args[0]*sin(radians(args[1])) + args[2]*sin(radians(args[3]))
-            magnitude = sqrt(real**2 + imag**2)
+            real = args[0] * cos(radians(args[1])) + args[2] * cos(radians(args[3]))
+            imag = args[0] * sin(radians(args[1])) + args[2] * sin(radians(args[3]))
+            magnitude = sqrt(real ** 2 + imag ** 2)
             angle = degrees(atan(float(real) / imag)) if imag != 0 else 0
             send_string = f'{args[0]}e^{args[1]}j + {args[2]}e^{args[3]}j = ' + '%.2fe^%.2fj'%(magnitude,angle)
             if message_info['is_private']:
@@ -68,7 +68,7 @@ def calculate_phasor(message_info):
         try:
             args: list = list(map(lambda x:int(x), raw_message[1:].split()))
             real = args[0] * args[2]
-            imag = radians(args[1]) + radians(args[3])
+            imag = (args[1] + args[3]) % 360
             send_string = f'{args[0]}e^{args[1]}j * {args[2]}e^{args[3]}j = ' + '%.2fe^%.2fj'%(real, imag)
             if message_info['is_private']:
                 send_private_msg(send_string, message_info['sender_qq'])
@@ -80,7 +80,7 @@ def calculate_phasor(message_info):
         try:
             args: list = list(map(lambda x:int(x), raw_message[1:].split()))
             real = float(args[0]) / args[2] if int(args[2]) != 0 else 0
-            imag = radians(args[1]) - radians(args[3])
+            imag = (args[1] - args[3]) % 360
             if not real:
                 send_string = '分母不能为等于或接近0的数'
             else:
