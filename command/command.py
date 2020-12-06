@@ -233,8 +233,7 @@ def learn_response(message_info: dict):
 
 
 def get_one_page(url):
-    s = requests.session()
-    s.keep_alive = False
+    requests.session().keep_alive = False
     headers = {
         "Connection": "close",
         "User-Agent": r'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36(KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36'}
@@ -356,6 +355,26 @@ def parse_song_page(json, message) -> str:
     return data
 
 
+def parse_netease_song(json, message):
+    id_data_list = []
+    with open(SONG_PATH) as f:
+        search_dict: dict = load(f)
+        last_search = search_dict['last_search']
+        index = search_dict['index']
+    if last_search == message:
+        index += 1
+    else:
+        index = 0
+    search_dict['last_search'] = message
+    search_dict['index'] = index
+    dump(search_dict, open(SONG_PATH, 'w'))
+    json = loads(json)
+    song_list: list = json['result']['songs']
+    for item in song_list:
+        id_data_list.append(item['id'])
+    data = f'[CQ:music,type=163,id={id_data_list[index]}]'
+    return data
+
 @add_command('搜索')
 def search_item(message_info: dict):
     message: str = message_info['message']
@@ -390,6 +409,27 @@ def search_song(message_info: dict):
         send_string = "点歌 %s 超时，请重试" % search_item
     else:
         new_message = parse_song_page(html, search_item)
+        if new_message is None:
+            send_string = "点歌 %s 失败\n没有该条目" % search_item
+        else:
+            send_string = new_message
+    if message_info['is_private']:
+        send_private_msg(send_string, message_info['sender_qq'])
+    elif message_info['is_group']:
+        send_public_msg(send_string, message_info['group_qq'])
+
+
+@add_command('.点歌')
+def search_song(message_info: dict):
+    search_item = message_info['message'][3:].strip()
+    url = r'http://music.163.com/api/search/get/web?csrf_token=hlpretag=&hlposttag=&s={}&type=1&offset=0&total=true&limit=10'.format(search_item)
+    json = get_one_page(url)
+    if json == 'failed':
+        send_string = "点歌 %s 失败\n该条目不存在" % search_item
+    elif json == 'time_out':
+        send_string = "点歌 %s 超时，请重试" % search_item
+    else:
+        new_message = parse_netease_song(json, search_item)
         if new_message is None:
             send_string = "点歌 %s 失败\n没有该条目" % search_item
         else:
