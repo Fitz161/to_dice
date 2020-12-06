@@ -47,6 +47,28 @@ def send_public_msg(send_string, group_qq):
     if response.status_code == 200:
         print("消息发送成功")
 
+
+def get_one_page(url, type='content'):
+    requests.session().keep_alive = False
+    headers = {
+        "Connection": "close",
+        "User-Agent": UserAgent}
+    try:
+        response = requests.get(url, headers=headers, timeout=8)
+        if response.status_code == 200:
+            if type == 'text':
+                return response.text
+            elif type == 'json':
+                return response.json()
+            elif type == 'content':
+                return response.content
+        else:
+            return "failed"
+    except requests.RequestException as e:
+        print("request failed: time out", e)
+        return "time_out"
+
+
 from command.dot_command import *
 #避免command和dot_command两个文件循环import
 
@@ -232,22 +254,6 @@ def learn_response(message_info: dict):
         send_public_msg(send_string, message_info['group_qq'])
 
 
-def get_one_page(url):
-    requests.session().keep_alive = False
-    headers = {
-        "Connection": "close",
-        "User-Agent": r'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36(KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36'}
-    try:
-        response = requests.get(url, headers=headers, timeout=8)
-        if response.status_code == 200:
-            return response.content
-        else:
-            return "failed"
-    except requests.RequestException as e:
-        print("request failed: time out", e)
-        return "time_out"
-
-
 def parse_one_page(html, option) -> str:
     soup = bp(html, "lxml")
     select_list = [
@@ -331,9 +337,7 @@ def search_baidu(message_info: dict):
         send_public_msg(send_string, message_info['group_qq'])
 
 
-def parse_song_page(json, message) -> str:
-    mid_data_list = []
-    id_data_list = []
+def search_song_history(message)->int:
     with open(SONG_PATH) as f:
         search_dict: dict = load(f)
         last_search = search_dict['last_search']
@@ -345,6 +349,12 @@ def parse_song_page(json, message) -> str:
     search_dict['last_search'] = message
     search_dict['index'] = index
     dump(search_dict, open(SONG_PATH, 'w'))
+    return index
+
+def parse_song_page(json, message) -> str:
+    mid_data_list = []
+    id_data_list = []
+    index = search_song_history(message)
     json = loads(json)
     song_list:list = json['data']['song']['list']
     for item in song_list:
@@ -357,18 +367,7 @@ def parse_song_page(json, message) -> str:
 
 def parse_netease_song(json, message):
     id_data_list = []
-    with open(SONG_PATH) as f:
-        search_dict: dict = load(f)
-        last_search = search_dict['last_search']
-        index = search_dict['index']
-    if last_search == message:
-        index += 1
-    else:
-        index = 0
-    search_dict['last_search'] = message
-    search_dict['index'] = index
-    dump(search_dict, open(SONG_PATH, 'w'))
-    json = loads(json)
+    index = search_song_history(message)
     song_list: list = json['result']['songs']
     for item in song_list:
         id_data_list.append(item['id'])
@@ -423,7 +422,7 @@ def search_song(message_info: dict):
 def search_song(message_info: dict):
     search_item = message_info['message'][3:].strip()
     url = r'http://music.163.com/api/search/get/web?csrf_token=hlpretag=&hlposttag=&s={}&type=1&offset=0&total=true&limit=10'.format(search_item)
-    json = get_one_page(url)
+    json = get_one_page(url, 'json')
     if json == 'failed':
         send_string = "点歌 %s 失败\n该条目不存在" % search_item
     elif json == 'time_out':
