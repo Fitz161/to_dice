@@ -26,7 +26,8 @@ def dot_send_msg(message_info:dict):
 def show_command_doc(message_info):
     send_string = '签到/打卡\n单抽/十连/百连1-7\n要礼物 热榜\n冷知识 点歌\n'\
                   '搜索格式:\n百度/搜索1-3 内容\n百度：百度百科\n搜索1'\
-                  '：wikipedia(暂不可用)\n搜索2：萌娘百科\n搜索3：touhouwiki'
+                  '：wikipedia(暂不可用)\n搜索2：萌娘百科\n搜索3：touhouwiki\n' \
+                  '/send向管理员发送消息\n/bot on /bot off可以开启/关闭bot\n如果想让bot退群，请输入/leave哦'
     if message_info['is_private']:
         send_private_msg(send_string, message_info['sender_qq'])
     elif message_info['is_group']:

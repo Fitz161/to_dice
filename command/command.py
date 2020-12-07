@@ -162,15 +162,15 @@ def sign_in_response(message_info: dict):
     QQ = message_info['sender_qq']
     with open(DATA_PATH) as f:
         total_data: dict = load(f)
-    total_data.setdefault('%s' % QQ, {'days': 0, 'today': 0, 'points': 0})
-    data = total_data['%s' % QQ]
+    total_data.setdefault(str(QQ), {'days': 0, 'today': 0, 'points': 0})
+    data = total_data[str(QQ)]
     days = data['days']
     points = data['points']
     if not data['today']:
         point = randint(20, 50) + days * 5
         send_string = '[CQ:at,qq=%d]\n签到成功~!\n本次获得香火钱:%d\n剩余香火钱:%d\n累计签到:%d天' % (
             QQ, point, points + point, days + 1)
-        total_data["%s" % QQ] = {'days': days + 1, 'today': 1, 'points': points + point}
+        total_data[str(QQ)] = {'days': days + 1, 'today': 1, 'points': points + point}
     else:
         send_string = '[CQ:at,qq=%d]\n今天已经签到过了呢~' % QQ
     if message_info['is_private']:
@@ -418,7 +418,7 @@ def search_song(message_info: dict):
         send_public_msg(send_string, message_info['group_qq'])
 
 
-@add_command('.点歌')
+@add_command('/点歌')
 def search_song(message_info: dict):
     search_item = message_info['message'][3:].strip()
     url = r'http://music.163.com/api/search/get/web?csrf_token=hlpretag=&hlposttag=&s={}&type=1&offset=0&total=true&limit=10'.format(search_item)
@@ -496,18 +496,24 @@ def zhihu_hot(message_info):
             send_public_msg(send_string, message_info['group_qq'])
 
 
-@add_command('.')
+@add_command('/')
 def send_admin_msg(message_info):
-    message:str = message_info['message']
-    if message[:5] == '.send':
-        dot_send_msg(message_info)
-    elif message == '.help':
-        show_command_doc(message_info)
-    elif message[:7] == '.phasor':
-        calculate_phasor(message_info)
     from command.event_handle import get_group_admin, leave_group
-    if message[:8] == '.leaving':
+    message:str = message_info['message']
+    if message[:5] == '/send':
+        dot_send_msg(message_info)
+    elif message == '/help':
+        show_command_doc(message_info)
+    elif message[:7] == '/phasor':
+        calculate_phasor(message_info)
+    if not message_info['is_group']:
+        return
+    if message[:6] == '/leave':
         if message_info['sender_qq'] in get_group_admin(message_info):
             leave_group(message_info)
         else:
             send_public_msg('请让管理员发送该命令', message_info['group_qq'])
+    elif message[:8] == '/bot off' and message_info['sender_qq'] in get_group_admin(message_info):
+        from main_handle import set_active
+        set_active(message_info, False)
+
