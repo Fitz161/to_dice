@@ -83,6 +83,7 @@ def handle_message(message_queue: Queue):
                         command_dict.get(message[0])(message_info)
                     elif message in admin_command_dict.keys() and message_info['sender_qq'] in ADMIN_LIST:
                         admin_command_dict.get(message)(message_info)
+                    learn_response(message_info)
                 else:
                     if message[:2] in command_dict.keys():
                         threading.Thread(target=command_dict.get(message[:2]), args=(message_info,)).start()
@@ -92,6 +93,7 @@ def handle_message(message_queue: Queue):
                         threading.Thread(target=command_dict.get(message[0]), args=(message_info,)).start()
                     elif message in admin_command_dict.keys() and message_info['sender_qq'] in ADMIN_LIST:
                         threading.Thread(target=admin_command_dict.get(message), args=(message_info,)).start()
+                    learn_response(message_info)
         else:
             sleep(PAUSE_TIME)
 

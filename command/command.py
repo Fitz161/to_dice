@@ -159,6 +159,8 @@ def dozen_draw(message_info):
 
 @add_command('签到')
 def sign_in_response(message_info: dict):
+    if message_info['message'] != '签到':
+        return
     QQ = message_info['sender_qq']
     with open(DATA_PATH) as f:
         total_data: dict = load(f)
@@ -183,6 +185,8 @@ def sign_in_response(message_info: dict):
 
 @add_command('打卡')
 def sign_in_response(message_info: dict):
+    if message_info['message'] != '打卡':
+        return
     QQ = message_info['sender_qq']
     with open(DATA_PATH) as f:
         total_data: dict = load(f)
@@ -207,6 +211,8 @@ def sign_in_response(message_info: dict):
 
 @add_command('信息')
 def sign_in_info(message_info: dict):
+    if message_info['message'] != '信息':
+        return
     QQ = message_info['sender_qq']
     with open(DATA_PATH) as f:
         total_data: dict = load(f)
@@ -224,6 +230,8 @@ def sign_in_info(message_info: dict):
 
 @add_command('跟我学')
 def learn(message_info: dict):
+    if message_info['message'] != '跟我学':
+        return
     message = message_info['message']
     with open(LEARN_PATH) as f:
         total_dict = load(f)
@@ -236,6 +244,8 @@ def learn(message_info: dict):
 
 @add_command('指令')
 def show_command(message_info: dict):
+    if message_info['message'] != '指令':
+        return
     send_string = "签到/打卡\n单抽/十连/百连1-7\n搜索1-3/百度\n要红包 热榜\n冷知识 点歌"
     if message_info['is_private']:
         send_private_msg(send_string, message_info['sender_qq'])
@@ -246,12 +256,14 @@ def show_command(message_info: dict):
 def learn_response(message_info: dict):
     message = message_info['message']
     with open("/bot/learn.json") as f:
-        total_dict = load(f)
-    send_string = '%s' % total_dict[message]
+        total_dict:dict = load(f)
+    send_string = total_dict.get(message)
+    if not send_string:
+        return
     if message_info['is_private']:
-        send_private_msg(send_string, message_info['sender_qq'])
+        send_private_msg(str(send_string), message_info['sender_qq'])
     elif message_info['is_group']:
-        send_public_msg(send_string, message_info['group_qq'])
+        send_public_msg(str(send_string), message_info['group_qq'])
 
 
 def parse_one_page(html, option) -> str:
@@ -441,6 +453,8 @@ def search_song(message_info: dict):
 
 @add_command('冷知识')
 def knowledge(message_info: dict):
+    if message_info['message'] != '冷知识':
+        return
     with open(KNOWLEDGE_PATH) as f:
         data_dict = load(f)
     send_string = data_dict[str(randint(0, 46))]
@@ -466,6 +480,8 @@ def send_gift(message_info: dict):
 
 @add_command('热榜')
 def zhihu_hot(message_info):
+    if message_info['message'] != '热榜':
+        return
     requests.session().keep_alive = False
     headers = {
         'Cookie': ZHIHU_COOKIE,
@@ -508,12 +524,12 @@ def send_admin_msg(message_info):
         calculate_phasor(message_info)
     if not message_info['is_group']:
         return
-    if message[:6] == '/leave':
+    if message == '/leave':
         if message_info['sender_qq'] in get_group_admin(message_info):
             leave_group(message_info)
         else:
             send_public_msg('请让管理员发送该命令', message_info['group_qq'])
-    elif message[:8] == '/bot off' and message_info['sender_qq'] in get_group_admin(message_info):
+    elif message == '/bot off' and message_info['sender_qq'] in get_group_admin(message_info):
         from main_handle import set_active
         set_active(message_info, False)
 
