@@ -5,8 +5,8 @@ PORT = 5701
 #admin_command_list=['重置','删库','去面壁','状态','召唤']
 CARD_PATH = ["/packages/cards1/", "/packages/cards2/","/packages/cards3/",
         "/packages/cards4/","/packages/cards5/", "/packages/cards6/", "/packages/cards7/"]
-ADMIN_LIST = [2224546887, 1369401707]
-#BLACK_LIST = [275691215]
+ADMIN_LIST = []
+#BLACK_LIST = []
 REPEAT_SELECT = True
 MULTI_THREADING = True
 SAVE_QUALITY = 50
@@ -33,7 +33,7 @@ ACTIVE_PATH = '/bot/is_active.json'
 #UserAgent = r'Mozilla/5.0 (X11; Linux x86_64; rv:60.0) Gecko/20100101 Firefox/60.0'
 UserAgent = r"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36"
 
-ZHIHU_COOKIE = r'd_c0="AKBW3aNd9hCPTtfK5hpSPpcPVZn_bRXv5T4=|1584191234"; _zap=097b6602-15f4-41a1-9abe-0e96d79567b7; _xsrf=74e35504-3633-40cc-b675-f04c6c4913fa; _ga=GA1.2.629736330.1594346960; z_c0="2|1:0|10:1594346970|4:z_c0|92:Mi4xSjh4UEVBQUFBQUFBb0ZiZG8xMzJFQ1lBQUFCZ0FsVk4yaHYxWHdDM2hPUDVXalNMRzAweUJwZlRZOVozZVZzUnhR|010b2037b176c3cc573086c66a60bbd3459964973b57908fc840b6e6a46a576e"; tshl=; tst=h; __utma=51854390.629736330.1594346960.1602940254.1602940254.1; __utmz=51854390.1602940254.1.1.utmcsr=(direct)|utmccn=(direct)|utmcmd=(none); __utmc=51854390; __utmv=51854390.100-1|2=registration_date=20190616=1^3=entry_date=20190616=1; q_c1=1fc7634d131744e0ae3c35648841540d|1605796522000|1594355214000; Hm_lvt_98beee57fd2ef70ccdd5ca52b9740c49=1606531531,1606532220,1606533000,1606576599; Hm_lpvt_98beee57fd2ef70ccdd5ca52b9740c49=1606798562; SESSIONID=v2mRqHklj1B7QW0kqGaxKAK3iUeWF8mAqLN6VyTfDvU; JOID=UVocAE5geJVItCHEBWAvDpGVclMeF0HyHMNopGMMSNx143D1ZYi1XBezK8UJDbzaT_7EM_9-sIYhMyLc-wydHhc=; osd=VVkRAUJke5hJuCXHCGEjCpKYc18aFEzzEMdrqWIATN944nzxZoW0UBOwJsQFCb_XTvLAMPJ_vIIiPiPQ_w-QHxs=; KLBRSID=975d56862ba86eb589d21e89c8d1e74e|1606798608|1606798559'
+ZHIHU_COOKIE = ''
 ZHIHU_LENGTH = 10
 
 apiBaseUrl = 'http://127.0.0.1:5700'
