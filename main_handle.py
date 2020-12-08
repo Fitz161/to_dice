@@ -12,9 +12,10 @@ def get_message(message_queue: Queue):
         message_info = extract_message(message_queue.get())
         print(strftime("%Y-%m-%d %H:%M:%S", localtime()), end=' ')
         print('收到 ', message_info.get('sender_qq'), '消息:', message_info.get('message'))
-        with open(BLACK_LIST_PATH) as f:
-            black_list:list = load(f)['black_list']
-        if message_info['group_qq'] in black_list or message_info['sender_qq'] in black_list:
+        black_list, is_active = get_black_active(message_info)
+        if message_info['message'] == '/bot on':
+            set_active(message_info, True)
+        if message_info['group_qq'] in black_list or message_info['sender_qq'] in black_list or is_active == False:
             return None
         elif not message_info['is_notice'] and not message_info['is_anonymous'] and not message_info['is_request']:
             return message_info
@@ -93,3 +94,35 @@ def handle_message(message_queue: Queue):
                         threading.Thread(target=admin_command_dict.get(message), args=(message_info,)).start()
         else:
             sleep(PAUSE_TIME)
+
+
+def get_black_active(message_info):
+    with open(BLACK_LIST_PATH) as f:
+        black_list: list = load(f)['black_list']
+    if not message_info['is_group']:
+        return black_list, None
+    group_qq = message_info['group_qq']
+    with open(ACTIVE_PATH) as f:
+        active_dict:dict = load(f)
+    if str(group_qq) not in active_dict.keys():
+        active_dict[str(group_qq)] = True
+    is_active = active_dict.get(str(group_qq))
+    with open(ACTIVE_PATH, 'w') as f:
+        dump(active_dict, f)
+    return black_list, is_active
+
+def set_active(message_info, b:bool):
+    if not message_info['is_group']:
+        return
+    group_qq = message_info['group_qq']
+    QQ = message_info['sender_qq']
+    from command.event_handle import get_group_admin
+    if QQ not in get_group_admin(message_info):
+        return
+    with open(ACTIVE_PATH) as f:
+        active_dict: dict = load(f)
+    if str(group_qq) not in active_dict.keys():
+        active_dict[str(group_qq)] = True
+    active_dict[str(group_qq)] = b
+    with open(ACTIVE_PATH, 'w') as f:
+        dump(active_dict, f)
