@@ -100,3 +100,42 @@ def calculate_phasor(message_info):
             send_public_msg(send_string, message_info['group_qq'])
 
 
+def expression(message_info):
+    import re, random
+    raw_str = message_info['message'][2:]
+    raw_str = raw_str.replace('x', '*').replace('X', '*').replace('d', 'D')
+    print(raw_str)
+    pattern = re.compile('\d{0,2}D\d+')
+    pattern2 = re.compile('(\d{0,2})D(\d+)')
+    offset = 0
+    # print(re.search(pattern, raw_str))
+    while re.search(pattern, raw_str[offset:]):
+        match = re.search(pattern, raw_str[offset:])
+        match2 = re.search(pattern2, match.group(0))
+        times, limit = match2.groups()
+        times = 1 if not times else times
+        if times == 1:
+            num_str = str(random.randint(1, int(limit)))
+        else:
+            num_str = '('
+            for i in range(0, int(times)):
+                random_num = random.randint(1, int(limit))
+                if i == 0:
+                    num_str += str(random_num)
+                else:
+                    num_str += '+' + str(random_num)
+            num_str += ')'
+        raw_str = raw_str.replace(match.group(0), num_str, 1)
+        # print(raw_str)
+        offset += match.span(0)[1] - len(match.group(0)) + len(num_str)
+        # print('offset',offset)
+    print(raw_str)
+    try:
+        send_string = message_info['message'][2:] + '=' + raw_str + '=' + str(round(eval(raw_str)))
+        print(send_string)
+    except:
+        send_string = '表达式无效'
+    if message_info['is_private']:
+        send_private_msg(send_string, message_info['sender_qq'])
+    elif message_info['is_group']:
+        send_public_msg(send_string, message_info['group_qq'])

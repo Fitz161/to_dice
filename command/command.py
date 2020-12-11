@@ -518,6 +518,8 @@ def send_admin_msg(message_info):
     message:str = message_info['message']
     if message[:5] == '/send':
         dot_send_msg(message_info)
+    elif message[:2] == '/r':
+        expression(message_info)
     elif message == '/help':
         show_command_doc(message_info)
     elif message[:7] == '/phasor':
