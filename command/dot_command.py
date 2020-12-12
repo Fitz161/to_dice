@@ -131,7 +131,7 @@ def expression(message_info):
         # print('offset',offset)
     print(raw_str)
     try:
-        send_string = message_info['message'][2:] + '=' + raw_str + '=' + str(round(eval(raw_str)))
+        send_string = f'{message_info["message"][2:]}={raw_str}={str(round(eval(raw_str)))}'
         print(send_string)
     except:
         send_string = '表达式无效'
