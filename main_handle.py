@@ -1,5 +1,6 @@
 from queue import Queue
 from time import sleep, localtime, strftime
+from datetime import datetime
 
 from command import event_handle
 from command.admin_command import *
@@ -96,6 +97,27 @@ def handle_message(message_queue: Queue):
                     learn_response(message_info)
         else:
             sleep(PAUSE_TIME)
+
+
+def timing_task():
+    while True:
+        now = datetime.now()
+        if now.hour == 0 and now.minute == 0 and now.second == 0:
+            admin_command_dict.get('重置')(0)
+            with open(PATTERN_PATH) as f:
+                data:dict = load(f)['evening']
+                send_message = data.get(str(randint(1, len(data))))
+            for group_qq in SEND_LIST:
+                send_public_msg(send_message, group_qq)
+            sleep(25000)
+        elif now.hour == 7 and now.minute == 0 and now.second == 0:
+            with open(PATTERN_PATH) as f:
+                data:dict = load(f)['morning']
+                send_message = data.get(str(randint(1, len(data))))
+            for group_qq in SEND_LIST:
+                send_public_msg(send_message, group_qq)
+            sleep(61000)
+        sleep(1)
 
 
 def get_black_active(message_info):
