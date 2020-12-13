@@ -339,8 +339,8 @@ def search_baidu(message_info: dict):
         soup = bp(html, "lxml")
         content = soup.head.find_all(name='meta')
         try:
-            new_message = content[3].attrs["content"]
-            send_string = "搜索 %s :\n%s" % (message, new_message)
+            respond_content = content[3].attrs["content"]
+            send_string = "搜索 %s :\n%s" % (message, respond_content[:SEARCH_LENGTH] + '...')
         except IndexError:
             send_string = '搜索 %s 失败\n没有该条目' % message
     if message_info['is_private']:
@@ -493,17 +493,21 @@ def zhihu_hot(message_info):
             soup = bp(response.content, "lxml")
             titles = soup.find_all(attrs={"class" : "HotItem-title"})
             hots = soup.find_all(attrs={"class" : "HotItem-metrics HotItem-metrics--bottom"})
-            send_string = '知乎热榜\n'
+            send_string_list = []
+            for index in range(0, ZHIHU_LENGTH, 3):
+                send_string_list.append('知乎热榜\n')
             #for index, title, hot in zip(list(range(max(len(titles), len(hots)))), titles, hots):
             for index, title, hot in zip(list(range(1, ZHIHU_LENGTH + 1)), titles, hots):
-                send_string += str(index) + '.' + title.get_text() + '\n' + hot.get_text()[:-3] + '\n'
-            print(send_string)
+                send_string_list[int((index-1)/3)] += f'{str(index)}.{title.get_text()}\n{hot.get_text()[:-3]}\n'
+            print(send_string_list)
         else:
-            send_string = '获取热榜失败'
+            send_string_list = ['获取热榜失败']
         if message_info['is_private']:
-            send_private_msg(send_string, message_info['sender_qq'])
+            for send_string in send_string_list:
+                send_private_msg(send_string, message_info['sender_qq'])
         elif message_info['is_group']:
-            send_public_msg(send_string, message_info['group_qq'])
+            for send_string in send_string_list:
+                send_public_msg(send_string, message_info['group_qq'])
     except requests.RequestException:
         send_string = '获取热榜超时,请重试'
         if message_info['is_private']:
