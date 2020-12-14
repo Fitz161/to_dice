@@ -56,7 +56,7 @@ def group_add_request(message_info:dict):
     if response.status_code == 200:
         print(f'添加群{group_qq}')
         sleep(2)
-        send_public_msg('Botです。\n输入.help查看帮助', group_qq)
+        send_public_msg("Botです。\n输入'帮助'查看帮助", group_qq)
 
 
 def add_black_list(message_info):

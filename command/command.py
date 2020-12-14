@@ -83,7 +83,7 @@ def concat_images(image_names, path, type):
     target = Image.new('RGB', (UNIT_WIDTH_SIZE * COL, UNIT_HEIGHT_SIZE * ROW))
     for row in range(ROW):
         for col in range(COL):
-            target.paste(image_files[COL * row + col], (0 + UNIT_WIDTH_SIZE * col, 0 + UNIT_HEIGHT_SIZE * row))
+            target.paste(image_files[COL * row + col], (UNIT_WIDTH_SIZE * col, UNIT_HEIGHT_SIZE * row))
     if COL == 10:
         width = target.size[0]
         height = target.size[1]
@@ -358,6 +358,8 @@ def search_song_history(message)->int:
         index += 1
     else:
         index = 0
+    if index == 10:
+        index = 0
     search_dict['last_search'] = message
     search_dict['index'] = index
     dump(search_dict, open(SONG_PATH, 'w'))
@@ -450,6 +452,13 @@ def search_song(message_info: dict):
     elif message_info['is_group']:
         send_public_msg(send_string, message_info['group_qq'])
 
+@add_command('帮助')
+def show_help_doc(message_info: dict):
+    send_pic = f"[CQ:image,file=file://{HELP_DOC_PATH}]"
+    if message_info['is_private']:
+        send_private_msg(send_pic, message_info['sender_qq'])
+    elif message_info['is_group']:
+        send_public_msg(send_pic, message_info['group_qq'])
 
 @add_command('冷知识')
 def knowledge(message_info: dict):
