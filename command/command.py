@@ -388,6 +388,7 @@ def parse_netease_song(json, message):
     data = f'[CQ:music,type=163,id={id_data_list[index]}]'
     return data
 
+
 @add_command('搜索')
 def search_item(message_info: dict):
     message: str = message_info['message']
@@ -410,9 +411,9 @@ def search_item(message_info: dict):
         send_public_msg(send_string, message_info['group_qq'])
 
 
-@add_command('点歌')
+@add_command('/点歌')
 def search_song(message_info: dict):
-    search_item = message_info['message'][2:].strip()
+    search_item = message_info['message'][3:].strip()
     url = r'https://c.y.qq.com/soso/fcgi-bin/client_search_cp?ct=24&qqmusic_ver=1298&new_json=1&remoteplace=txt.yqq.center&searchid=46369776929740470&t=0&aggr=1&cr=1&catZhida=1&lossless=0&flag_qc=0&p=1&n=10&w={}&g_tk_new_20200303=138867905&g_tk=138867905&loginUin=2224546887&hostUin=0&format=json&inCharset=utf8&outCharset=utf-8&notice=0&platform=yqq.json&needNewCode=0'.format(
         search_item.replace(' ', '%20'))
     html = get_one_page(url)
@@ -432,7 +433,7 @@ def search_song(message_info: dict):
         send_public_msg(send_string, message_info['group_qq'])
 
 
-@add_command('/点歌')
+@add_command('/点歌2')
 def search_song(message_info: dict):
     search_item = message_info['message'][3:].strip()
     url = r'http://music.163.com/api/search/get/web?csrf_token=hlpretag=&hlposttag=&s={}&type=1&offset=0&total=true&limit=10'.format(search_item)
@@ -451,6 +452,29 @@ def search_song(message_info: dict):
         send_private_msg(send_string, message_info['sender_qq'])
     elif message_info['is_group']:
         send_public_msg(send_string, message_info['group_qq'])
+
+
+@add_command('点歌')
+def search_song(message_info: dict):
+    search_item = message_info['message'][2:].strip()
+    url = f'https://musicapi.leanapp.cn/search?keywords={urllib.parse.quote(search_item)}'
+    json = get_one_page(url, 'json')
+    if json == 'failed':
+        send_string = "点歌 %s 失败\n该条目不存在" % search_item
+    elif json == 'time_out':
+        send_string = "点歌 %s 超时，请重试" % search_item
+    else:
+        new_message = parse_netease_song(json, search_item)
+        if new_message is None:
+            send_string = "点歌 %s 失败\n没有该条目" % search_item
+        else:
+            send_string = new_message
+    print(send_string)
+    if message_info['is_private']:
+        send_private_msg(send_string, message_info['sender_qq'])
+    elif message_info['is_group']:
+        send_public_msg(send_string, message_info['group_qq'])
+
 
 @add_command('帮助')
 def show_help_doc(message_info: dict):
