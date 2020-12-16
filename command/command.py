@@ -57,7 +57,7 @@ def get_one_page(url, type='content'):
         "User-Agent": UserAgent}
     try:
         response = requests.get(url, headers=headers, timeout=8)
-        if response.status_code == 200:
+        if response.status_code == 200 or response.status_code == 304:
             if type == 'text':
                 return response.text
             elif type == 'json':
