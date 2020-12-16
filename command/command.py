@@ -1,14 +1,16 @@
 # encoding=utf8
 import os
+import re
 import threading
-from PIL import Image
-from random import sample, choices, randint
-from json import loads, load, dump
-from bs4 import BeautifulSoup as bp
 import urllib.parse
+from json import loads, load, dump
+from random import sample, choices, randint
+from time import localtime, strftime
+
+from PIL import Image
+from bs4 import BeautifulSoup as bp
 
 from config import *
-
 
 command_dict = {}
 
@@ -487,6 +489,7 @@ def show_help_doc(message_info: dict):
     elif message_info['is_group']:
         send_public_msg(send_pic, message_info['group_qq'])
 
+
 @add_command('冷知识')
 def knowledge(message_info: dict):
     if message_info['message'] != '冷知识':
@@ -512,6 +515,25 @@ def send_gift(message_info: dict):
         send_private_msg(send_string, QQ)
     elif message_info['is_group']:
         send_public_msg(send_string, message_info['group_qq'])
+
+
+@add_command('保存')
+def save_image(message_info: dict):
+    now = strftime("%Y_%m_%d_%H_%M_%S", localtime())
+    message = message_info['message']
+    QQ = message_info['sender_qq']
+    url_list = re.findall('url=(.+?)]', message)
+    for index, url in zip(range(len(url_list)), url_list):
+        path = f'{QQ}_{SAVE_PATH}{now}_{index}.jpg'
+        print(url)
+        response = get_one_page(url)
+        if isinstance(response, bytes):
+            print(f'从{url}获取图片成功')
+            with open(path, 'wb') as f:
+                f.write(response)
+            print(path, '保存成功', sep=' ')
+        else:
+            print(response)
 
 
 @add_command('热榜')
