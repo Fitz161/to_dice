@@ -433,11 +433,14 @@ def search_song(message_info: dict):
         send_public_msg(send_string, message_info['group_qq'])
 
 
-@add_command('/点歌2')
+@add_command('.点歌')
 def search_song(message_info: dict):
     search_item = message_info['message'][3:].strip()
+    session = requests.session()
+    session.headers = {'User-Agent' : UserAgent}
     url = r'http://music.163.com/api/search/get/web?csrf_token=hlpretag=&hlposttag=&s={}&type=1&offset=0&total=true&limit=10'.format(search_item)
-    json = get_one_page(url, 'json')
+    #json = get_one_page(url, 'json')
+    json = session.get(url).json()
     if json == 'failed':
         send_string = "点歌 %s 失败\n该条目不存在" % search_item
     elif json == 'time_out':
