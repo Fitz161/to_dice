@@ -1,7 +1,7 @@
 import requests
 
 from config import apiBaseUrl, apiGroupInfo, ADMIN_LIST
-from command.command import send_public_msg, send_private_msg
+from command.command import send_public_msg, send_private_msg, send_long_msg
 
 
 def dot_send_msg(message_info:dict):
@@ -28,10 +28,7 @@ def show_command_doc(message_info):
                   '搜索格式:\n百度/搜索1-3 内容\n百度：百度百科\n搜索1'\
                   '：wikipedia(暂不可用)\n搜索2：萌娘百科\n搜索3：touhouwiki\n' \
                   '/send向管理员发送消息\n/bot on /bot off可以开启/关闭bot\n如果想让bot退群，请输入/leave哦'
-    if message_info['is_private']:
-        send_private_msg(send_string, message_info['sender_qq'])
-    elif message_info['is_group']:
-        send_public_msg(send_string, message_info['group_qq'])
+    send_long_msg(message_info, send_string)
 
 
 def calculate_phasor(message_info):

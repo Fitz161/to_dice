@@ -49,6 +49,17 @@ def send_public_msg(send_string, group_qq):
     if response.status_code == 200:
         print("消息发送成功")
 
+def send_long_msg(message_info, send_string):
+    for index in range(0, round((len(send_string) + 99) / 100)):
+        message = send_string[SEND_LENGTH*index : SEND_LENGTH*(index+1)]
+        if not message or index > 4:
+            return
+        if message_info['is_private']:
+            send_private_msg(message, message_info['sender_qq'])
+        elif message_info['is_group']:
+            send_public_msg(message, message_info['group_qq'])
+        sleep(PAUSE_TIME)
+
 
 def get_one_page(url, type='content'):
     requests.session().keep_alive = False
@@ -232,7 +243,7 @@ def sign_in_info(message_info: dict):
 
 @add_command('跟我学')
 def learn(message_info: dict):
-    if message_info['message'] != '跟我学':
+    if not message_info['message'] == '跟我学':
         return
     message = message_info['message']
     with open(LEARN_PATH) as f:
@@ -241,7 +252,12 @@ def learn(message_info: dict):
         total_dict[key] = value
     with open(LEARN_PATH, "w") as f:
         dump(total_dict, f)
-    print("跟我学: %s-%s保存成功" % (key, value))
+    send_string = "跟我学: %s-%s保存成功" % (key, value)
+    print(send_string)
+    if message_info['is_private']:
+        send_private_msg(send_string, message_info['sender_qq'])
+    elif message_info['is_group']:
+        send_public_msg(send_string, message_info['group_qq'])
 
 
 @add_command('指令')
@@ -278,8 +294,8 @@ def parse_one_page(html, option) -> str:
     string = ''
     for item in content:
         string += item.get_text()
-    print(string[:SEARCH_LENGTH])
-    return string[:SEARCH_LENGTH] + '...'
+    print(string)
+    return string
 
 
 def search_wiki(message) -> str:
@@ -342,13 +358,10 @@ def search_baidu(message_info: dict):
         content = soup.head.find_all(name='meta')
         try:
             respond_content = content[3].attrs["content"]
-            send_string = "搜索 %s :\n%s" % (message, respond_content[:SEARCH_LENGTH] + '...')
+            send_string = "搜索 %s :\n%s" % (message, respond_content)
         except IndexError:
             send_string = '搜索 %s 失败\n没有该条目' % message
-    if message_info['is_private']:
-        send_private_msg(send_string, message_info['sender_qq'])
-    elif message_info['is_group']:
-        send_public_msg(send_string, message_info['group_qq'])
+    send_long_msg(message_info, send_string)
 
 
 def search_song_history(message)->int:
@@ -407,10 +420,8 @@ def search_item(message_info: dict):
         send_string = search_thwiki(item)
     else:
         return
-    if message_info['is_private']:
-        send_private_msg(send_string, message_info['sender_qq'])
-    elif message_info['is_group']:
-        send_public_msg(send_string, message_info['group_qq'])
+    if send_string:
+        send_long_msg(message_info, send_string)
 
 
 @add_command('/点歌')
@@ -524,7 +535,7 @@ def save_image(message_info: dict):
     QQ = message_info['sender_qq']
     url_list = re.findall('url=(.+?)]', message)
     for index, url in zip(range(len(url_list)), url_list):
-        path = f'{QQ}_{SAVE_PATH}{now}_{index}.jpg'
+        path = f'{SAVE_PATH}{QQ}_{now}_{index}.jpg'
         print(url)
         response = get_one_page(url)
         if isinstance(response, bytes):
@@ -532,6 +543,10 @@ def save_image(message_info: dict):
             with open(path, 'wb') as f:
                 f.write(response)
             print(path, '保存成功', sep=' ')
+            if message_info['is_private']:
+                send_private_msg('保存成功', QQ)
+            elif message_info['is_group']:
+                send_public_msg('保存成功', message_info['group_qq'])
         else:
             print(response)
 
