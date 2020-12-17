@@ -5,7 +5,7 @@ import threading
 import urllib.parse
 from json import loads, load, dump
 from random import sample, choices, randint
-from time import localtime, strftime
+from time import sleep, localtime, strftime
 
 from PIL import Image
 from bs4 import BeautifulSoup as bp
