@@ -2,6 +2,7 @@
 import os
 import re
 import threading
+import hashlib
 import urllib.parse
 from json import loads, load, dump
 from random import sample, choices, randint
@@ -26,6 +27,7 @@ def dot_command(command):
         command_dict[command] = func
     return add_func
 
+
 def send_private_msg(send_string, QQ):
     data = {
         'message': send_string,
@@ -48,6 +50,7 @@ def send_public_msg(send_string, group_qq):
     response = requests.post(api_url, data=data)
     if response.status_code == 200:
         print("消息发送成功")
+
 
 def send_long_msg(message_info, send_string):
     for index in range(0, round((len(send_string) + 99) / 100)):
@@ -380,6 +383,7 @@ def search_song_history(message)->int:
     dump(search_dict, open(SONG_PATH, 'w'))
     return index
 
+
 def parse_song_page(json, message) -> str:
     mid_data_list = []
     id_data_list = []
@@ -589,6 +593,49 @@ def zhihu_hot(message_info):
             send_public_msg(send_string, message_info['group_qq'])
 
 
+@add_command('翻译成')
+def translate(message_info):
+    message:str = message_info['message']
+    type, text =  message[:message.find(' ')][3:], message[message.find(' ') + 1:]
+    new_type = LANGUAGE_DICT.get(type, message.find(' '))
+    if message.find(' ') == -1 or not new_type:
+        send_string = '格式错误，请使用\n[翻译成目标语言 待翻译文本]\n的格式发送消息。'
+        if message_info['is_private']:
+            send_private_msg(send_string, message_info['sender_qq'])
+        elif message_info['is_group']:
+            send_public_msg(send_string, message_info['group_qq'])
+        return
+    salt = randint(1000000000, 9999999999)
+    md5 = hashlib.md5()
+    md5.update(f'{BAIDU_TRANS_ID}{text}{salt}{BAIDU_TRANS_KEY}'.encode('utf8'))
+    sign = md5.hexdigest()
+    url = 'http://fanyi-api.baidu.com/api/trans/vip/translate'
+    headers = {
+        'User-Agent': UserAgent,
+        'Content-Type': 'application/x-www-form-urlencoded'}
+    data = {
+        'q': text,
+        'from': 'auto',
+        'to': new_type,
+        'appid': BAIDU_TRANS_ID,
+        'salt': salt,
+        'sign': sign}
+    result = loads(requests.post(url, data, headers=headers).text)
+    while result.get('error_code') == '52003':
+        sleep(1)
+        result = loads(requests.post(url, data, headers=headers).text)
+    try:
+        new_text = result.get('trans_result')[0].get('dst')
+        send_string = f'{text[:30]}...翻译成{type}:\n{new_text}'
+    except:
+        if 'error_code' in result:
+            send_string = f'error_code{result.get("error_code")}'
+        else:
+            send_string = '格式错误，请使用\n[翻译成目标语言 待翻译文本]\n的格式发送消息.'
+    print(send_string)
+    send_long_msg(message_info, send_string)
+
+
 @add_command('/')
 def send_admin_msg(message_info):
     from command.event_handle import get_group_admin, leave_group
@@ -597,7 +644,7 @@ def send_admin_msg(message_info):
         dot_send_msg(message_info)
     elif message[:2] == '/r':
         expression(message_info)
-    elif message == '/help':
+    elif message[:5] == '/help':
         show_command_doc(message_info)
     elif message[:7] == '/phasor':
         calculate_phasor(message_info)
