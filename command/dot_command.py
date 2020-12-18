@@ -1,6 +1,6 @@
 import requests
 
-from config import apiBaseUrl, apiGroupInfo, ADMIN_LIST
+from config import apiBaseUrl, apiGroupInfo, ADMIN_LIST, LANGUAGE_DICT
 from command.command import send_public_msg, send_private_msg, send_long_msg
 
 
@@ -24,11 +24,18 @@ def dot_send_msg(message_info:dict):
 
 
 def show_command_doc(message_info):
-    send_string = '签到/打卡\n单抽/十连/百连1-7\n要礼物 热榜\n冷知识 点歌\n'\
-                  '搜索格式:\n百度/搜索1-3 内容\n百度：百度百科\n搜索1'\
-                  '：wikipedia(暂不可用)\n搜索2：萌娘百科\n搜索3：touhouwiki\n' \
-                  '/send向管理员发送消息\n/bot on /bot off可以开启/关闭bot\n如果想让bot退群，请输入/leave哦'
+    if message_info['message'][5:].strip() == '翻译':
+        send_string = '支持翻译的语言:\n'
+        for language in LANGUAGE_DICT:
+            send_string += language + ' '
+    elif message_info['message'][5:].strip() == '翻译':
+        send_string = '搜索格式 待搜索的词\n百度：百度百科\n搜索1：wikipedia(暂不可用)\n搜索2：萌娘百科\n搜索3：touhouwiki\n'
+    else:
+        send_string = '签到/打卡\n单抽/十连/百连1-7\n要礼物 热榜\n点歌 /点歌\n' \
+                      '搜索格式:\n百度/搜索1-3 内容\n翻译成 冷知识' \
+                      '/send向管理员发送消息\n/bot on /bot off可以开启/关闭bot\n如果想让bot退群，请输入/leave哦'
     send_long_msg(message_info, send_string)
+
 
 
 def calculate_phasor(message_info):
