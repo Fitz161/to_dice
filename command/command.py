@@ -677,7 +677,7 @@ def zhihu_hot(message_info):
             comment_list = parse_netease_comment(json)
             send_string = ''
             for index in range(length):
-                send_string += comment_list[index] + '\n'
+                send_string += f'{str(index + 1)}.{comment_list[index]}\n'
             print(send_string)
     send_long_msg(message_info, send_string[:-1])
 
