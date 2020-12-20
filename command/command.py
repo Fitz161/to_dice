@@ -634,12 +634,16 @@ def zhihu_hot(message_info):
             print(send_string_list)
         else:
             send_string_list = ['获取热榜失败']
-        if message_info['is_private']:
-            for send_string in send_string_list:
-                send_private_msg(send_string, message_info['sender_qq'])
-        elif message_info['is_group']:
-            for send_string in send_string_list:
-                send_public_msg(send_string, message_info['group_qq'])
+        # if message_info['is_private']:
+        #     for send_string in send_string_list:
+        #         send_private_msg(send_string, message_info['sender_qq'])
+        # elif message_info['is_group']:
+        #     for send_string in send_string_list:
+        #         send_public_msg(send_string, message_info['group_qq'])
+        send_string = ''
+        for string in send_string_list:
+            send_string += string
+        send_long_msg(message_info, send_string)
     except requests.RequestException:
         send_string = '获取热榜超时,请重试'
         if message_info['is_private']:
