@@ -565,6 +565,51 @@ def save_image(message_info: dict):
             print(response)
 
 
+@add_command('av')
+def av_to_bv(message_info):
+    message = message_info['message']
+    try:
+        av = int(message[2:])
+    except:
+        return
+    table = 'fZodR9XQDSUm21yCkr6zBqiveYah8bt4xsWpHnJE7jL5VG3guMTKNPAwcF'
+    tr = {}
+    for i in range(58):
+        tr[table[i]] = i
+    s = [11, 10, 3, 8, 4, 6]
+    xor = 177451812
+    add = 8728348608
+    av = (av ^ xor) + add
+    r = list('BV1  4 1 7  ')
+    for i in range(6):
+        r[s[i]] = table[av // 58**i % 58]
+    send_string = ''.join(r)
+    if message_info['is_private']:
+        send_private_msg(send_string, message_info['sender_qq'])
+    elif message_info['is_group']:
+        send_public_msg(send_string, message_info['group_qq'])
+
+
+@add_command('BV')
+def bv_to_av(message_info):
+    bv = message_info['message']
+    table = 'fZodR9XQDSUm21yCkr6zBqiveYah8bt4xsWpHnJE7jL5VG3guMTKNPAwcF'
+    tr = {}
+    for i in range(58):
+        tr[table[i]] = i
+    s = [11, 10, 3, 8, 4, 6]
+    xor = 177451812
+    add = 8728348608
+    r = 0
+    for i in range(6):
+        r += tr[bv[s[i]]] * 58 ** i
+    send_string =  'av' + str((r - add) ^ xor)
+    if message_info['is_private']:
+        send_private_msg(send_string, message_info['sender_qq'])
+    elif message_info['is_group']:
+        send_public_msg(send_string, message_info['group_qq'])
+
+
 @add_command('热榜')
 def zhihu_hot(message_info):
     if message_info['message'] != '热榜':
