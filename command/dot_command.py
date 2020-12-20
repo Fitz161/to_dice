@@ -25,14 +25,17 @@ def dot_send_msg(message_info:dict):
 
 def show_command_doc(message_info):
     if message_info['message'][5:].strip() == '翻译':
-        send_string = '支持翻译的语言:\n'
+        send_string = '翻译格式:\n翻译成[目标语言] [带翻译文本]支持翻译的语言:\n'
         for language in LANGUAGE_DICT:
             send_string += language + ' '
     elif message_info['message'][5:].strip() == '翻译':
-        send_string = '搜索格式 待搜索的词\n百度：百度百科\n搜索1：wikipedia(暂不可用)\n搜索2：萌娘百科\n搜索3：touhouwiki\n'
+        send_string = '搜索格式:[格式] [待搜索的词]\n可用搜索格式:\n百度：百度百科\n搜索1：wikipedia(暂不可用)' \
+                      '\n搜索2：萌娘百科\n搜索3：touhouwiki\n'
+    elif message_info['message'][5:].strip() == '热评':
+        send_string = '网易云热评格式:\n 热评[显示热评条数] [歌名]\n热评条数要为一位数字'
     else:
-        send_string = '签到/打卡\n单抽/十连/百连1-7\n要礼物 热榜\n点歌 /点歌\n' \
-                      '搜索格式:\n百度/搜索1-3 内容\n翻译成 冷知识' \
+        send_string = '签到 打卡\n单抽 十连 百连[1-7]\n要礼物 热榜\n点歌/点歌 [歌名]\n冷知识 av BV' \
+                      '百度/搜索[1-3] [内容]\n翻译成[语言] [文本]\n热评[热评条数] [歌名]' \
                       '/send向管理员发送消息\n/bot on /bot off可以开启/关闭bot\n如果想让bot退群，请输入/leave哦'
     send_long_msg(message_info, send_string)
 
