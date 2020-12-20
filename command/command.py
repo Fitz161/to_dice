@@ -675,7 +675,12 @@ def zhihu_hot(message_info):
             url = f'http://music.163.com/api/v1/resource/comments/R_SO_4_{song_id}?limit=20&offset=0'
             json = get_one_page(url, 'json')
             comment_list = parse_netease_comment(json)
+            print(comment_list)
             send_string = ''
+            if len(comment_list) < length:
+                if not len(comment_list):
+                    send_string = '该歌曲暂无网易云热评'
+                length = len(comment_list)
             for index in range(length):
                 send_string += f'{str(index + 1)}.{comment_list[index]}\n'
             print(send_string)
