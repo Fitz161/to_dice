@@ -679,7 +679,7 @@ def zhihu_hot(message_info):
             for index in range(length):
                 send_string += comment_list[index] + '\n'
             print(send_string)
-    send_long_msg(message_info, send_string[])
+    send_long_msg(message_info, send_string[:-1])
 
 
 @add_command('翻译成')
