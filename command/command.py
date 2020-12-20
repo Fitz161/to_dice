@@ -405,7 +405,17 @@ def parse_netease_song(json, message):
     for item in song_list:
         id_data_list.append(item['id'])
     data = f'[CQ:music,type=163,id={id_data_list[index]}]'
-    return data
+    return data, id_data_list[index]
+
+
+def parse_netease_comment(json):
+    data_list = []
+    comment_list: list = json['hotComments']
+    for comment in comment_list:
+        content: list = comment['content']
+        nickname = comment['user']['nickname']
+        data_list.append(nickname + ': ' + content)
+    return data_list
 
 
 @add_command('搜索')
@@ -484,7 +494,7 @@ def search_song(message_info: dict):
     elif json == 'time_out':
         send_string = "点歌 %s 超时，请重试" % search_item
     else:
-        new_message = parse_netease_song(json, search_item)
+        new_message = parse_netease_song(json, search_item)[0]
         if new_message is None:
             send_string = "点歌 %s 失败\n没有该条目" % search_item
         else:
@@ -591,6 +601,36 @@ def zhihu_hot(message_info):
             send_private_msg(send_string, message_info['sender_qq'])
         elif message_info['is_group']:
             send_public_msg(send_string, message_info['group_qq'])
+
+
+@add_command('热评')
+def zhihu_hot(message_info):
+    message:str = message_info['message']
+    try:
+        length = int(message[2])
+    except:
+        return
+    search_item:str = message[3:].strip()
+    url = f'https://musicapi.leanapp.cn/search?keywords={urllib.parse.quote(search_item)}'
+    json = get_one_page(url, 'json')
+    if json == 'failed':
+        send_string = "获取 %s 热评失败\n该歌曲不存在" % search_item
+    elif json == 'time_out':
+        send_string = "获取 %s 热评超时，请重试" % search_item
+    else:
+        song_id = parse_netease_song(json, search_item)[1]
+        print('song_id', song_id)
+        if not song_id:
+            send_string = "获取 %s 热评失败\n该歌曲不存在" % search_item
+        else:
+            url = f'http://music.163.com/api/v1/resource/comments/R_SO_4_{song_id}?limit=20&offset=0'
+            json = get_one_page(url, 'json')
+            comment_list = parse_netease_comment(json)
+            send_string = ''
+            for index in range(length):
+                send_string += comment_list[index] + '\n'
+            print(send_string)
+    send_long_msg(message_info, send_string[])
 
 
 @add_command('翻译成')
