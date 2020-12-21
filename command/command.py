@@ -54,8 +54,9 @@ def send_public_msg(send_string, group_qq):
 
 def send_long_msg(message_info, send_string):
     for index in range(0, round((len(send_string) + 99) / 100)):
+        #限制每次发送文本字数不超过100字，总的发送次数不超过5+1次
         message = send_string[SEND_LENGTH*index : SEND_LENGTH*(index+1)]
-        if not message or index > 4:
+        if not message or index > 5:
             return
         if message_info['is_private']:
             send_private_msg(message, message_info['sender_qq'])
@@ -65,6 +66,7 @@ def send_long_msg(message_info, send_string):
 
 
 def get_one_page(url, type='content'):
+    """使用get请求访问指定url，并根据type以指定形式返回网页内容"""
     requests.session().keep_alive = False
     headers = {
         "Connection": "close",
@@ -105,6 +107,7 @@ def concat_images(image_names, path, type):
         height = target.size[1]
         target = target.resize((int(width * 0.5), int(height * 0.5)), Image.ANTIALIAS)
     pic_name = threading.current_thread().name
+    """使用线程名作为保存时图像的文件名，避免多个线程同时访问同一文件"""
     target.save(SAVE_PATH + pic_name + '.jpg', quality=SAVE_QUALITY)
 
 
@@ -288,6 +291,7 @@ def learn_response(message_info: dict):
 
 
 def parse_one_page(html, option) -> str:
+    """搜索功能中对返回的wiki框架的网页进行解析"""
     soup = bp(html, "lxml")
     select_list = [
         'body #content #bodyContent #mw-content-text .mw-parser-output > p',
@@ -375,9 +379,9 @@ def search_song_history(message)->int:
     if last_search == message:
         index += 1
     else:
-        index = 0
+        index = 1
     if index == 10:
-        index = 0
+        index = 1
     search_dict['last_search'] = message
     search_dict['index'] = index
     dump(search_dict, open(SONG_PATH, 'w'))
@@ -393,19 +397,22 @@ def parse_song_page(json, message) -> str:
     for item in song_list:
         mid_data_list.append(item['mid'])
         id_data_list.append(item['id'])
-    url = r'https://y.qq.com/n/yqq/song/{}.html'.format(mid_data_list[index])
-    data = f'[CQ:music,type=qq,id={id_data_list[index]}]'
-    return data
+    #url = r'https://y.qq.com/n/yqq/song/{}.html'.format(mid_data_list[index])
+    cq_music = f'[CQ:music,type=qq,id={id_data_list[index]}]'
+    return cq_music
 
 
-def parse_netease_song(json, message):
-    id_data_list = []
-    index = search_song_history(message)
+def parse_netease_song(json, message, index=0):
+    id_list, artist_list, song_name_list = [], [], []
+    if not index:
+        #index为0表示使用历史记录中的index，否则使用用户指定的歌曲编号
+        index = search_song_history(message)
     song_list: list = json['result']['songs']
-    for item in song_list:
-        id_data_list.append(item['id'])
-    data = f'[CQ:music,type=163,id={id_data_list[index]}]'
-    return data, id_data_list[index]
+    for item in song_list[:10]:
+        id_list.append(item['id'])
+        artist_list.append(item['artists'][0]['name'])
+        song_name_list.append(item['name'])
+    return index, id_list, song_name_list, artist_list
 
 
 def parse_netease_comment(json):
@@ -486,7 +493,11 @@ def search_song(message_info: dict):
 
 @add_command('点歌')
 def search_song(message_info: dict):
-    search_item = message_info['message'][2:].strip()
+    try:
+        index = int(message_info[2])
+    except:
+        index = 0
+    search_item = message_info['message'][3:].strip()
     url = f'https://musicapi.leanapp.cn/search?keywords={urllib.parse.quote(search_item)}'
     json = get_one_page(url, 'json')
     if json == 'failed':
@@ -494,7 +505,7 @@ def search_song(message_info: dict):
     elif json == 'time_out':
         send_string = "点歌 %s 超时，请重试" % search_item
     else:
-        new_message = parse_netease_song(json, search_item)[0]
+        new_message = parse_netease_song(json, search_item, index)
         if new_message is None:
             send_string = "点歌 %s 失败\n没有该条目" % search_item
         else:
@@ -504,6 +515,12 @@ def search_song(message_info: dict):
         send_private_msg(send_string, message_info['sender_qq'])
     elif message_info['is_group']:
         send_public_msg(send_string, message_info['group_qq'])
+
+
+@add_command('网易云')
+def show_song_list(message_info):
+    search_item = message_info['message'][3:].strip()
+
 
 
 @add_command('帮助')
@@ -627,7 +644,8 @@ def zhihu_hot(message_info):
             hots = soup.find_all(attrs={"class" : "HotItem-metrics HotItem-metrics--bottom"})
             send_string_list = []
             for index in range(0, ZHIHU_LENGTH, 3):
-                send_string_list.append('知乎热榜\n')
+                #send_string_list.append('知乎热榜\n')
+                send_string_list.append('')
             #for index, title, hot in zip(list(range(max(len(titles), len(hots)))), titles, hots):
             for index, title, hot in zip(list(range(1, ZHIHU_LENGTH + 1)), titles, hots):
                 send_string_list[int((index-1)/3)] += f'{str(index)}.{title.get_text()}\n{hot.get_text()[:-3]}\n'
@@ -640,7 +658,7 @@ def zhihu_hot(message_info):
         # elif message_info['is_group']:
         #     for send_string in send_string_list:
         #         send_public_msg(send_string, message_info['group_qq'])
-        send_string = ''
+        send_string = '知乎热榜\n'
         for string in send_string_list:
             send_string += string
         send_long_msg(message_info, send_string)
@@ -667,7 +685,8 @@ def zhihu_hot(message_info):
     elif json == 'time_out':
         send_string = "获取 %s 热评超时，请重试" % search_item
     else:
-        song_id = parse_netease_song(json, search_item)[1]
+        index, id_list, name_list, artist_list = parse_netease_song(json, search_item)
+        song_id = id_list[index-1]
         print('song_id', song_id)
         if not song_id:
             send_string = "获取 %s 热评失败\n该歌曲不存在" % search_item
@@ -676,15 +695,16 @@ def zhihu_hot(message_info):
             json = get_one_page(url, 'json')
             comment_list = parse_netease_comment(json)
             print(comment_list)
-            send_string = ''
+            send_string = '歌曲:{name_list[index-1]}\n歌手:{artist_list[index-1]}\n'
             if len(comment_list) < length:
                 if not len(comment_list):
-                    send_string = '该歌曲暂无网易云热评'
+                    send_string += '暂无网易云热评，或热评命令格式错误。 '
                 length = len(comment_list)
             for index in range(length):
                 send_string += f'{str(index + 1)}.{comment_list[index]}\n'
             print(send_string)
-    send_long_msg(message_info, send_string[:-1])
+            send_string = send_string[:-1]
+    send_long_msg(message_info, send_string)
 
 
 @add_command('翻译成')
