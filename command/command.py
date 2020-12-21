@@ -408,7 +408,7 @@ def parse_netease_song(json, message, index=0):
         #index为0表示使用历史记录中的index，否则使用用户指定的歌曲编号
         index = search_song_history(message)
     song_list: list = json['result']['songs']
-    for item in song_list[:10]:
+    for item in song_list[:9]:
         id_list.append(item['id'])
         artist_list.append(item['artists'][0]['name'])
         song_name_list.append(item['name'])
@@ -520,7 +520,18 @@ def search_song(message_info: dict):
 @add_command('网易云')
 def show_song_list(message_info):
     search_item = message_info['message'][3:].strip()
-
+    url = f'https://musicapi.leanapp.cn/search?keywords={urllib.parse.quote(search_item)}'
+    json = get_one_page(url, 'json')
+    if json == 'failed':
+        send_string = "获取歌曲 %s 信息失败\n该歌曲不存在 " % search_item
+    elif json == 'time_out':
+        send_string = "获取歌曲 %s 信息超时，请重试 " % search_item
+    else:
+        name_list, artist_list = parse_netease_song(json, search_item)[2:]
+        send_string = f'网易云搜索歌曲{search_item}:\n可使用点歌[歌曲编号(一位数字)] [歌曲名]来进行点歌\n'
+        for index, name, artist in zip(range(len(name_list)), name_list, artist_list):
+            send_string += f'编号:{index+1} 歌名:{name_list[index]} 歌手:{artist_list[index]}\n'
+    send_long_msg(message_info, send_string[:-1])
 
 
 @add_command('帮助')
@@ -677,7 +688,12 @@ def zhihu_hot(message_info):
         length = int(message[2])
     except:
         return
-    search_item:str = message[3:].strip()
+    try:
+        index = int(message[3])
+        search_item: str = message[3:].strip()
+    except:
+        index = 0
+        search_item: str = message[2:].strip()
     url = f'https://musicapi.leanapp.cn/search?keywords={urllib.parse.quote(search_item)}'
     json = get_one_page(url, 'json')
     if json == 'failed':
@@ -685,7 +701,7 @@ def zhihu_hot(message_info):
     elif json == 'time_out':
         send_string = "获取 %s 热评超时，请重试" % search_item
     else:
-        index, id_list, name_list, artist_list = parse_netease_song(json, search_item)
+        index, id_list, name_list, artist_list = parse_netease_song(json, search_item, index)
         song_id = id_list[index-1]
         print('song_id', song_id)
         if not song_id:
@@ -695,7 +711,7 @@ def zhihu_hot(message_info):
             json = get_one_page(url, 'json')
             comment_list = parse_netease_comment(json)
             print(comment_list)
-            send_string = '歌曲:{name_list[index-1]}\n歌手:{artist_list[index-1]}\n'
+            send_string = '歌曲:{name_list[index-1]}\n歌手:{artist_list[index-1]}下的评论\n'
             if len(comment_list) < length:
                 if not len(comment_list):
                     send_string += '暂无网易云热评，或热评命令格式错误。 '
