@@ -719,13 +719,16 @@ def translate(message_info):
         sleep(1)
         result = loads(requests.post(url, data, headers=headers).text)
     try:
-        new_text = result.get('trans_result')[0].get('dst')
-        send_string = f'{text[:30]}...翻译成{type}:\n{new_text}'
+        new_text = ''
+        trans_result = result.get('trans_result')
+        for item in trans_result:
+            new_text += item.get('dst') + '\n'
+        send_string = f'{text[:30]}...翻译成{type}:\n{new_text[:-1]}'
     except:
         if 'error_code' in result:
             send_string = f'error_code{result.get("error_code")}'
         else:
-            send_string = '格式错误，请使用\n[翻译成目标语言 待翻译文本]\n的格式发送消息.'
+            send_string = '格式错误，请使用\n翻译成[目标语言] [待翻译文本]\n的格式发送消息.'
     print(send_string)
     send_long_msg(message_info, send_string)
 
