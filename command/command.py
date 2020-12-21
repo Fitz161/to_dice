@@ -62,7 +62,7 @@ def send_long_msg(message_info, send_string):
             send_private_msg(message, message_info['sender_qq'])
         elif message_info['is_group']:
             send_public_msg(message, message_info['group_qq'])
-        sleep(PAUSE_TIME)
+        sleep(PAUSE_TIME * 2)
 
 
 def get_one_page(url, type='content'):
@@ -687,10 +687,10 @@ def zhihu_hot(message_info):
         return
     try:
         index = int(message[3])
-        search_item: str = message[3:].strip()
+        search_item: str = message[4:].strip()
     except:
         index = 0
-        search_item: str = message[2:].strip()
+        search_item: str = message[3:].strip()
     url = f'https://musicapi.leanapp.cn/search?keywords={urllib.parse.quote(search_item)}'
     json = get_one_page(url, 'json')
     if json == 'failed':
@@ -708,13 +708,14 @@ def zhihu_hot(message_info):
             json = get_one_page(url, 'json')
             comment_list = parse_netease_comment(json)
             print(comment_list)
-            send_string = '歌曲:{name_list[index-1]}\n歌手:{artist_list[index-1]}下的评论\n'
-            if len(comment_list) < length:
-                if not len(comment_list):
-                    send_string += '暂无网易云热评，或热评命令格式错误。 '
-                length = len(comment_list)
-            for index in range(length):
-                send_string += f'{str(index + 1)}.{comment_list[index]}\n'
+            if not len(comment_list):
+                send_string = '暂无网易云热评，或热评命令格式错误。 '
+            else:
+                send_string = f'歌曲:{name_list[index-1]}\n歌手:{artist_list[index-1]} 下的评论\n'
+                if len(comment_list) < length:
+                    length = len(comment_list)
+                for index in range(length):
+                    send_string += f'{str(index + 1)}.{comment_list[index]}\n'
             print(send_string)
             send_string = send_string[:-1]
     send_long_msg(message_info, send_string)
