@@ -505,11 +505,8 @@ def search_song(message_info: dict):
     elif json == 'time_out':
         send_string = "点歌 %s 超时，请重试" % search_item
     else:
-        new_message = parse_netease_song(json, search_item, index)
-        if new_message is None:
-            send_string = "点歌 %s 失败\n没有该条目" % search_item
-        else:
-            send_string = new_message
+        index, id_list = parse_netease_song(json, search_item, index)[:2]
+        send_string = f'[CQ:music,type=163,id={id_list[index-1]}]'
     print(send_string)
     if message_info['is_private']:
         send_private_msg(send_string, message_info['sender_qq'])
