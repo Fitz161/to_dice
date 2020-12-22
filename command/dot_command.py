@@ -33,20 +33,23 @@ def show_command_doc(message_info):
                       '\n搜索2：萌娘百科\n搜索3：touhouwiki\n'
     elif message_info['message'][5:].strip() == '热评':
         send_string = '网易云热评格式:\n热评[显示热评条数][歌曲编号(可选)] [歌名]\n热评条数要为一位数字'
+    elif message_info['message'][5:].strip() == 'phasor':
+        send_string = '命令格式:\n/phasor[运算符] [第一个相量的模] [角度(rad)] [第二个相量的模] [角度(rad)]'
     else:
-        send_string = '签到 打卡\n单抽 十连 百连[1-7]\n要礼物 热榜\n点歌/点歌 网易云 [歌名]\n冷知识 av BV' \
-                      '百度/搜索[1-3] [内容]\n翻译成[语言] [文本]\n热评[条数](编号) [歌名]' \
+        send_string = '签到 打卡\n单抽 十连 百连[1-7]\n要礼物 热榜\n点歌/点歌 网易云 [歌名]\n冷知识 av BV\n' \
+                      '百度/搜索[1-3] [内容]\n翻译成[语言] [文本]\n热评[条数](编号) [歌名]\n' \
                       '/send向管理员发送消息\n/bot on /bot off可以开启/关闭bot\n如果想让bot退群，请输入/leave哦'
     send_long_msg(message_info, send_string)
 
 
 
 def calculate_phasor(message_info):
+    """计算相量"""
     from math import sin, cos, radians, sqrt, atan, degrees
     raw_message:str = message_info['message'][7:]
     if raw_message[0] == '+':
         try:
-            args:list = list(map(lambda x:int(x), raw_message[1:].split()))
+            args:list = list(map(lambda x:float(x), raw_message[1:].split()))
             real = args[0] * cos(radians(args[1])) + args[2] * cos(radians(args[3]))
             imag = args[0] * sin(radians(args[1])) + args[2] * sin(radians(args[3]))
             magnitude = sqrt(real ** 2 + imag ** 2)
@@ -60,12 +63,12 @@ def calculate_phasor(message_info):
             send_private_msg(e, message_info['sender_qq'])
     elif raw_message[0] == '-':
         try:
-            args: list = list(map(lambda x:int(x), raw_message[1:].split()))
+            args: list = list(map(lambda x:float(x), raw_message[1:].split()))
             real = args[0] * cos(radians(args[1])) - args[2] * cos(radians(args[3]))
             imag = args[0] * sin(radians(args[1])) - args[2] * sin(radians(args[3]))
             magnitude = sqrt(real ** 2 + imag ** 2)
             angle = degrees(atan(float(real) / imag)) if imag != 0 else 0
-            send_string = f'{args[0]}e^{args[1]}j + {args[2]}e^{args[3]}j = ' + '%.2fe^%.2fj'%(magnitude,angle)
+            send_string = f'{args[0]}e^{args[1]}j + {args[2]}e^{args[3]}j = ' + '%.2fe^%.2fj'%(magnitude, angle)
             if message_info['is_private']:
                 send_private_msg(send_string, message_info['sender_qq'])
             elif message_info['is_group']:
@@ -74,7 +77,7 @@ def calculate_phasor(message_info):
             send_private_msg(e, message_info['sender_qq'])
     elif raw_message[0] == '*':
         try:
-            args: list = list(map(lambda x:int(x), raw_message[1:].split()))
+            args: list = list(map(lambda x:float(x), raw_message[1:].split()))
             real = args[0] * args[2]
             imag = (args[1] + args[3]) % 360
             send_string = f'{args[0]}e^{args[1]}j * {args[2]}e^{args[3]}j = ' + '%.2fe^%.2fj'%(real, imag)
@@ -86,8 +89,8 @@ def calculate_phasor(message_info):
             send_private_msg(e, message_info['sender_qq'])
     elif raw_message[0] == '/':
         try:
-            args: list = list(map(lambda x:int(x), raw_message[1:].split()))
-            real = float(args[0]) / args[2] if int(args[2]) != 0 else 0
+            args: list = list(map(lambda x:float(x), raw_message[1:].split()))
+            real = float(args[0]) / args[2] if float(args[2]) != 0 else 0
             imag = (args[1] - args[3]) % 360
             if not real:
                 send_string = '分母不能为等于或接近0的数'
@@ -98,7 +101,7 @@ def calculate_phasor(message_info):
             elif message_info['is_group']:
                 send_public_msg(send_string, message_info['group_qq'])
         except Exception as e:
-            send_private_msg(e, message_info['sender_qq'])
+            send_private_msg(message_info['message'] + e, message_info['sender_qq'])
     else:
         send_string = '表达式错误或不支持'
         if message_info['is_private']:
