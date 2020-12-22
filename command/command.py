@@ -822,11 +822,13 @@ def word_cloud_gen(message_info):
         text = None
     if text:
         cut = ' '.join(lcut(text))
-        wc = WordCloud(font_path=FONT_DICT['black'], min_word_length=2,
+        print(cut[:100])
+        print(FONT_DICT[str(font_type)])
+        wc = WordCloud(font_path=FONT_DICT[str(font_type)], min_word_length=2,
                        mode='RGBA', mask=None, color_func=None,
                        max_font_size=30, min_font_size=5, max_words=1000,
                        scale=3, background_color='white').generate(cut)
-        pic_path = SAVE_PATH + threading.current_thread().name + '.jpg'
+        pic_path = SAVE_PATH + threading.current_thread().name + '.png'
         wc.to_file(pic_path)
         print("图片生成成功")
         send_string = f"[CQ:image,file=file://{pic_path}]"
