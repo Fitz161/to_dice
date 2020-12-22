@@ -249,13 +249,14 @@ def sign_in_info(message_info: dict):
 
 @add_command('跟我学')
 def learn(message_info: dict):
-    if not message_info['message'] == '跟我学':
-        return
     message = message_info['message']
     with open(LEARN_PATH) as f:
         total_dict = load(f)
-        key, value = message[3:].strip().split("*")
-        total_dict[key] = value
+        try:
+            key, value = message[3:].strip().split("*")[:2]
+            total_dict[key] = value
+        except:
+            return
     with open(LEARN_PATH, "w") as f:
         dump(total_dict, f)
     send_string = "跟我学: %s-%s保存成功" % (key, value)
@@ -495,9 +496,10 @@ def search_song(message_info: dict):
 def search_song(message_info: dict):
     try:
         index = int(message_info[2])
+        search_item = message_info['message'][3:].strip()
     except:
         index = 0
-    search_item = message_info['message'][3:].strip()
+        search_item = message_info['message'][2:].strip()
     url = f'https://musicapi.leanapp.cn/search?keywords={urllib.parse.quote(search_item)}'
     json = get_one_page(url, 'json')
     if json == 'failed':
@@ -725,9 +727,9 @@ def zhihu_hot(message_info):
 def translate(message_info):
     message:str = message_info['message']
     type, text =  message[:message.find(' ')][3:], message[message.find(' ') + 1:]
-    new_type = LANGUAGE_DICT.get(type, message.find(' '))
+    new_type = LANGUAGE_DICT.get(type)
     if message.find(' ') == -1 or not new_type:
-        send_string = '格式错误，请使用\n[翻译成目标语言 待翻译文本]\n的格式发送消息。'
+        send_string = '格式错误，请使用\n翻译成[目标语言] [待翻译文本]\n的格式发送消息。\n可输入/help 翻译 查看帮助 '
         if message_info['is_private']:
             send_private_msg(send_string, message_info['sender_qq'])
         elif message_info['is_group']:
@@ -760,9 +762,10 @@ def translate(message_info):
         send_string = f'{text[:30]}...翻译成{type}:\n{new_text[:-1]}'
     except:
         if 'error_code' in result:
-            send_string = f'error_code{result.get("error_code")}'
+            send_string = f'error_code{result.get("error_code")}\n' \
+                          f'格式错误，请使用\n翻译成[目标语言] [待翻译文本]\n的格式发送消息.\n可输入/help 翻译 查看帮助'
         else:
-            send_string = '格式错误，请使用\n翻译成[目标语言] [待翻译文本]\n的格式发送消息.'
+            send_string = '格式错误，请使用\n翻译成[目标语言] [待翻译文本]\n的格式发送消息.\n可输入/help 翻译 查看帮助'
     print(send_string)
     send_long_msg(message_info, send_string)
 
