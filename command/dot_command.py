@@ -35,6 +35,10 @@ def show_command_doc(message_info):
         send_string = '网易云热评格式:\n热评[显示热评条数][歌曲编号(可选)] [歌名]\n热评条数要为一位数字'
     elif message_info['message'][5:].strip() == 'phasor':
         send_string = '命令格式:\n/phasor[运算符] [第一个相量的模] [角度(rad)] [第二个相量的模] [角度(rad)]'
+    elif message_info['message'][5:].strip() == '词云图':
+        send_string = '命令格式:\n词云图[模式](字体类型) [文本]\n命令说明:\n[模式]参数:1表示使用[文本]制作词云图\n' \
+                      '2-5表示使用不同搜索引擎搜索[文本]关键字,并使用搜索到的内容绘制词云图\n' \
+                      '(字体类型)参数为可选 1-宋体 2-黑体 3-书宋 4-楷体'
     else:
         send_string = '签到 打卡\n单抽 十连 百连[1-7]\n要礼物 热榜\n点歌/点歌 网易云 [歌名]\n冷知识 av BV\n' \
                       '百度/搜索[1-3] [内容]\n翻译成[语言] [文本]\n热评[条数](编号) [歌名]\n' \
