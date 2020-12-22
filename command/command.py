@@ -8,7 +8,9 @@ from json import loads, load, dump
 from random import sample, choices, randint
 from time import sleep, localtime, strftime
 
+from jieba import lcut
 from PIL import Image
+from wordcloud import WordCloud
 from bs4 import BeautifulSoup as bp
 
 from config import *
@@ -768,6 +770,72 @@ def translate(message_info):
             send_string = '格式错误，请使用\n翻译成[目标语言] [待翻译文本]\n的格式发送消息.\n可输入/help 翻译 查看帮助'
     print(send_string)
     send_long_msg(message_info, send_string)
+
+
+@add_command('词云图')
+def word_cloud_gen(message_info):
+    message:str = message_info['message']
+    try:
+        text_type =  int(message[3])
+    except:
+        return
+    try:
+        font_type = int(message[4])
+        if font_type < 1 or font_type > 4:
+            font_type = 1
+        item = message[5:].strip()
+    except:
+        font_type = 1
+        item = message[4:].strip()
+    if text_type == 1:
+        text = item
+    elif text_type == 2:
+        text = ''
+        url = 'https://baike.baidu.com/item/' + urllib.parse.quote(item)
+        print(url)
+        html = get_one_page(url)
+        if html == 'failed':
+            send_string = "搜索 %s 失败\n该条目不存在" % item
+        elif html == 'time_out':
+            send_string = "搜索 %s 超时，请重试" % item
+        else:
+            soup = bp(html, "lxml")
+            content = soup.head.find_all(name='meta')
+            try:
+                text = content[3].attrs["content"]
+                send_string = None
+            except IndexError:
+                send_string = '搜索 %s 失败\n没有该条目' % item
+        if send_string:
+            if message_info['is_private']:
+                send_private_msg(send_string, message_info['sender_qq'])
+            elif message_info['is_group']:
+                send_public_msg(send_string, message_info['group_qq'])
+            return
+    elif text_type == 3:
+        text = search_wiki(item)
+    elif text_type == 4:
+        text = search_moegirl(item)
+    elif text_type == 5:
+        text = search_thwiki(item)
+    else:
+        text = None
+    if text:
+        cut = ' '.join(lcut(text))
+        wc = WordCloud(font_path=FONT_DICT['black'], min_word_length=2,
+                       mode='RGBA', mask=None, color_func=None,
+                       max_font_size=30, min_font_size=5, max_words=1000,
+                       scale=3, background_color='white').generate(cut)
+        pic_path = SAVE_PATH + threading.current_thread().name + '.jpg'
+        wc.to_file(pic_path)
+        print("图片生成成功")
+        send_string = f"[CQ:image,file=file://{pic_path}]"
+    else:
+        send_string = '图片生成失败'
+    if message_info['is_private']:
+        send_private_msg(send_string, message_info['sender_qq'])
+    elif message_info['is_group']:
+        send_public_msg(send_string, message_info['group_qq'])
 
 
 @add_command('/')
