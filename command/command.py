@@ -497,7 +497,7 @@ def search_song(message_info: dict):
 @add_command('点歌')
 def search_song(message_info: dict):
     try:
-        index = int(message_info[2])
+        index = int(message_info['message'][2])
         search_item = message_info['message'][3:].strip()
     except:
         index = 0
