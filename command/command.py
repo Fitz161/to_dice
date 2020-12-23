@@ -391,18 +391,18 @@ def search_song_history(message)->int:
     return index
 
 
-def parse_song_page(json, message) -> str:
+def parse_song_page(json, message, index=0):
     mid_data_list = []
     id_data_list = []
-    index = search_song_history(message)
+    if not index:
+        #index为0表示使用历史记录中的index，否则使用用户指定的歌曲编号
+        index = search_song_history(message)
     json = loads(json)
     song_list:list = json['data']['song']['list']
     for item in song_list:
         mid_data_list.append(item['mid'])
         id_data_list.append(item['id'])
-    #url = r'https://y.qq.com/n/yqq/song/{}.html'.format(mid_data_list[index])
-    cq_music = f'[CQ:music,type=qq,id={id_data_list[index]}]'
-    return cq_music
+    return index, id_data_list, mid_data_list
 
 
 def parse_netease_song(json, message, index=0):
@@ -450,7 +450,12 @@ def search_item(message_info: dict):
 
 @add_command('/点歌')
 def search_song(message_info: dict):
-    search_item = message_info['message'][3:].strip()
+    try:
+        index = int(message_info['message'][3])
+        search_item = message_info['message'][4:].strip()
+    except:
+        index = 0
+        search_item = message_info['message'][3:].strip()
     url = r'https://c.y.qq.com/soso/fcgi-bin/client_search_cp?ct=24&qqmusic_ver=1298&new_json=1&remoteplace=txt.yqq.center&searchid=46369776929740470&t=0&aggr=1&cr=1&catZhida=1&lossless=0&flag_qc=0&p=1&n=10&w={}&g_tk_new_20200303=138867905&g_tk=138867905&loginUin=2224546887&hostUin=0&format=json&inCharset=utf8&outCharset=utf-8&notice=0&platform=yqq.json&needNewCode=0'.format(
         search_item.replace(' ', '%20'))
     html = get_one_page(url)
@@ -459,11 +464,9 @@ def search_song(message_info: dict):
     elif html == 'time_out':
         send_string = "点歌 %s 超时，请重试" % search_item
     else:
-        new_message = parse_song_page(html, search_item)
-        if new_message is None:
-            send_string = "点歌 %s 失败\n没有该条目" % search_item
-        else:
-            send_string = new_message
+        index, id_list, mid_list = parse_song_page(html, search_item, index)
+        send_string = f'[CQ:music,type=qq,id={id_list[index-1]}]'
+        #send_string = r'https://y.qq.com/n/yqq/song/{}.html'.format(mid_list[index-1])
     if message_info['is_private']:
         send_private_msg(send_string, message_info['sender_qq'])
     elif message_info['is_group']:
