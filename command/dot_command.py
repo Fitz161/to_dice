@@ -35,6 +35,8 @@ def show_command_doc(message_info):
         send_string = '网易云热评格式:\n热评[显示热评条数][歌曲编号(可选)] [歌名]\n热评条数,歌曲编号要为一位数字'
     elif message_info['message'][5:].strip() == '点歌':
         send_string = '点歌格式:\n点歌[歌曲编号(可选)] [歌曲名]\n默认使用网易云,点歌命令前加/可切换成QQ音乐点歌'
+    elif message_info['message'][5:].strip() == '抽卡':
+        send_string = '抽卡格式:\n[抽卡类型][卡包编号]\n抽卡类型包括 单抽 十连 百连\n卡包编号可选数字1-7'
     elif message_info['message'][5:].strip() == 'phasor':
         send_string = '命令格式:\n/phasor[运算符] [第一个相量的模] [角度(rad)] [第二个相量的模] [角度(rad)]'
     elif message_info['message'][5:].strip() == '词云图':
