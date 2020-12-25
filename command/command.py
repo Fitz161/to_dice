@@ -816,7 +816,13 @@ def word_cloud_gen(message_info):
                 send_public_msg(send_string, message_info['group_qq'])
             return
     elif text_type == 3:
-        send_string = ''
+        text = search_wiki(item)
+    elif text_type == 4:
+        text = search_moegirl(item)
+    elif text_type == 5:
+        text = search_thwiki(item)
+    elif text_type == 6:
+        text = ''
         headers = {
             'Cookie': ZHIHU_COOKIE,
             "Connection": "close",
@@ -827,20 +833,14 @@ def word_cloud_gen(message_info):
                 soup = bp(response.content, "lxml")
                 titles = soup.find_all(attrs={"class": "HotItem-title"})
                 hots = soup.find_all(attrs={"class": "HotItem-metrics HotItem-metrics--bottom"})
-                send_string += '知乎热榜\n'
+                text += '知乎热榜\n'
                 for title, hot in zip( titles, hots):
-                    send_string += f'{title.get_text()}\n{hot.get_text()[:-3]}\n'
-                print(send_string)
+                    text += f'{title.get_text()}\n{hot.get_text()[:-3]}\n'
+                print(text)
             else:
-                send_string += '获取热榜失败'
+                text += '获取热榜失败'
         except:
-            send_string += '获取热榜失败'
-    elif text_type == 5:
-        text = search_wiki(item)
-    elif text_type == 6:
-        text = search_moegirl(item)
-    elif text_type == 5:
-        text = search_thwiki(item)
+            text += '获取热榜失败'
     else:
         text = None
     if text:
