@@ -881,7 +881,7 @@ def word_cloud_gen(message_info):
     else:
         text = None
     if text:
-        cut = ' '.join(lcut(text))
+        cut = ' '.join([word for word in lcut(text) if word not in DEL_WORD_LIST])
         print(cut[:100])
         print(FONT_DICT[str(font_type)])
         wc = WordCloud(font_path=FONT_DICT[str(font_type)], min_word_length=2,
