@@ -832,15 +832,52 @@ def word_cloud_gen(message_info):
             if response.status_code == 200:
                 soup = bp(response.content, "lxml")
                 titles = soup.find_all(attrs={"class": "HotItem-title"})
-                hots = soup.find_all(attrs={"class": "HotItem-metrics HotItem-metrics--bottom"})
                 text += '知乎热榜\n'
-                for title, hot in zip( titles, hots):
-                    text += f'{title.get_text()}\n{hot.get_text()[:-3]}\n'
+                for title in titles:
+                    text += title.get_text()
                 print(text)
             else:
                 text += '获取热榜失败'
         except:
             text += '获取热榜失败'
+    elif text_type == 7:
+        try:
+            index = int(message[4])
+        except:
+            index = 0
+        try:
+            font_type = int(message[5])
+            if font_type < 1 or font_type > 4:
+                font_type = 1
+            search_item = message[6:].strip()
+        except:
+            font_type = 1
+            search_item = message[5:].strip()
+        text = ''
+        url = f'https://musicapi.leanapp.cn/search?keywords={urllib.parse.quote(search_item)}'
+        json = get_one_page(url, 'json')
+        if json == 'failed':
+            text = "获取 %s 热评失败\n该歌曲不存在" % search_item
+        elif json == 'time_out':
+            text = "获取 %s 热评超时，请重试" % search_item
+        else:
+            index, id_list, name_list, artist_list = parse_netease_song(json, search_item, index)
+            song_id = id_list[index - 1]
+            print('song_id', song_id)
+            if not song_id:
+                text = "获取 %s 热评失败\n该歌曲不存在" % search_item
+            else:
+                url = f'http://music.163.com/api/v1/resource/comments/R_SO_4_{song_id}?limit=20&offset=0'
+                json = get_one_page(url, 'json')
+                comment_list = parse_netease_comment(json)
+                print(comment_list)
+                if not len(comment_list):
+                    text = '暂无网易云热评，或热评命令格式错误。 '
+                else:
+                    text += f'歌曲:{name_list[index - 1]}\n歌手:{artist_list[index - 1]} 下的评论\n'
+                    for index in range(len(comment_list)):
+                        text += comment_list[index]
+                print(text)
     else:
         text = None
     if text:
