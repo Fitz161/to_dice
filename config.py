@@ -6,6 +6,7 @@ PORT = 5701
 CARD_PATH = ["/packages/cards1/", "/packages/cards2/","/packages/cards3/",
         "/packages/cards4/","/packages/cards5/", "/packages/cards6/", "/packages/cards7/"]
 ADMIN_LIST = []
+SEND_LIST = []
 #BLACK_LIST = []
 REPEAT_SELECT = True
 MULTI_THREADING = True
@@ -21,12 +22,14 @@ SAVE_PATH = '/packages/pics/'
 DATA_PATH = '/bot/data.json'
 LEARN_PATH = '/bot/learn.json'
 SONG_PATH = '/bot/search_song.json'
-SEARCH_LENGTH = 150
+SEND_LENGTH = 100
 KNOWLEDGE_PATH = '/bot/knowledge.json'
 MEMO_INFO_PATH = '/proc/meminfo'
 CPU_INFO_PATH = '/proc/loadavg'
 BLACK_LIST_PATH = '/bot/black_list.json'
 ACTIVE_PATH = '/bot/is_active.json'
+PATTERN_PATH = '/bot/pattern_message.json'
+HELP_DOC_PATH = '/packages/pics/help1.png'
 
 #UserAgent = r'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36(KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36'
 #UserAgent = r"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36 OPR/60.0.3255.83"
@@ -34,7 +37,7 @@ ACTIVE_PATH = '/bot/is_active.json'
 UserAgent = r"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/74.0.3729.131 Safari/537.36"
 
 ZHIHU_COOKIE = ''
-ZHIHU_LENGTH = 10
+ZHIHU_LENGTH = 9
 
 apiBaseUrl = 'http://127.0.0.1:5700'
 apiPrivateMsg = '/send_private_msg'
@@ -53,3 +56,18 @@ apiGroupInfo = '/get_group_info'
 apiSetGroupLeave = '/set_group_leave'
 #apiCleanCache = '/clean_cache'
 #apiRestart = '/set_restart'
+
+BAIDU_TRANS_ID = ''
+BAIDU_TRANS_KEY = ''
+LANGUAGE_DICT = {'中文':'zh','文言文':'wyw','繁体中文':'cht','英语':'en','日语':'jp','韩语':'kor','法语':'fra',
+    '西班牙语':'spa','泰语':'th','阿拉伯语':'ara','俄语':'ru','葡萄牙语':'pt','德语':'de','意大利语':'it','希腊语':'el',
+    '荷兰语':'nl','波兰语':'pl'}
+FONT_DICT = {"song":'/packages/font/song_font.ttf',
+            "black":'/packages/font/black_font.ttf',
+            "shusong":'/packages/font/shusong_font.ttf',
+            'kai':'/packages/font/kai_font.ttf',
+            "1":'/packages/font/song_font.TTF',
+            "2": '/packages/font/black_font.TTF',
+            "3": '/packages/font/shusong_font.ttf',
+            '4': '/packages/font/kai_font.ttf'}
+DEL_WORD_LIST = ['如何','看待','什么','为什么','哪些', '怎么', '有没有']
