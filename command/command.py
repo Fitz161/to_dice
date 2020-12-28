@@ -229,6 +229,15 @@ def sign_in_response(message_info: dict):
     with open(DATA_PATH, "w") as f:
         dump(total_data, f)
 
+@add_command('运势')
+def todays_fortune(message_info):
+    from random import randint
+    send_string = f'[CQ:at,qq={message_info["sender_qq"]}]\n今天的人品值是:{randint(1, 100)}'
+    if message_info['is_private']:
+        send_private_msg(send_string, message_info['sender_qq'])
+    elif message_info['is_group']:
+        send_public_msg(send_string, message_info['group_qq'])
+
 
 @add_command('信息')
 def sign_in_info(message_info: dict):
