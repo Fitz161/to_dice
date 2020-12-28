@@ -392,8 +392,8 @@ def search_song_history(message)->int:
 
 
 def parse_song_page(json, message, index=0):
-    mid_data_list = []
-    id_data_list = []
+    mid_data_list, id_data_list = [], []
+    song_name_list, artist_list = [], []
     if not index:
         #index为0表示使用历史记录中的index，否则使用用户指定的歌曲编号
         index = search_song_history(message)
@@ -402,7 +402,9 @@ def parse_song_page(json, message, index=0):
     for item in song_list:
         mid_data_list.append(item['mid'])
         id_data_list.append(item['id'])
-    return index, id_data_list, mid_data_list
+        song_name_list.append(item.get('name'))
+        artist_list.append(item['singer'][0]['name'])
+    return index, id_data_list, mid_data_list, song_name_list, artist_list
 
 
 def parse_netease_song(json, message, index=0):
@@ -464,9 +466,14 @@ def search_song(message_info: dict):
     elif html == 'time_out':
         send_string = "点歌 %s 超时，请重试" % search_item
     else:
-        index, id_list, mid_list = parse_song_page(html, search_item, index)
-        send_string = f'[CQ:music,type=qq,id={id_list[index-1]}]'
-        #send_string = r'https://y.qq.com/n/yqq/song/{}.html'.format(mid_list[index-1])
+        index, id_list, mid_list, song_name_list, artist_list = parse_song_page(html, search_item, index)
+        #send_string = f'[CQ:music,type=qq,id={id_list[index-1]}]'
+        url = r'https://y.qq.com/n/yqq/song/{}.html'.format(mid_list[index-1])
+        #send_string = f'[CQ:share,url={url},title={song_name_list[index-1]},image=https://c.y.qq.com/favicon.ico,' \
+                      #f'content={artist_list[index-1]}]'
+        send_string = f'[CQ:music,type=custom,url={url},audio={url},title={song_name_list[index-1]},' \
+                      f'image=https://c.y.qq.com/favicon.ico,content={artist_list[index-1]}]'
+        print(send_string)
     if message_info['is_private']:
         send_private_msg(send_string, message_info['sender_qq'])
     elif message_info['is_group']:
@@ -910,6 +917,8 @@ def send_admin_msg(message_info):
         expression(message_info)
     elif message[:5] == '/help':
         show_command_doc(message_info)
+    elif message == '/jrrp':
+        today_fortune(message_info)
     elif message[:7] == '/phasor':
         calculate_phasor(message_info)
     if not message_info['is_group']:
