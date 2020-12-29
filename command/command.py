@@ -229,6 +229,7 @@ def sign_in_response(message_info: dict):
     with open(DATA_PATH, "w") as f:
         dump(total_data, f)
 
+
 @add_command('运势')
 def todays_fortune(message_info):
     from random import randint
@@ -920,24 +921,24 @@ def word_cloud_gen(message_info):
 def send_admin_msg(message_info):
     from command.event_handle import get_group_admin, leave_group
     message:str = message_info['message']
-    if message[:5] == '/send':
+    if message[1:5] == 'send':
         dot_send_msg(message_info)
-    elif message[:2] == '/r':
+    elif message[1:2] == 'r':
         expression(message_info)
-    elif message[:5] == '/help':
+    elif message[1:5] == 'help':
         show_command_doc(message_info)
-    elif message == '/jrrp':
+    elif message[1:] == 'jrrp':
         today_fortune(message_info)
-    elif message[:7] == '/phasor':
+    elif message[1:7] == '/phasor':
         calculate_phasor(message_info)
     if not message_info['is_group']:
         return
-    if message == '/leave':
+    if message[1:] == 'leave':
         if message_info['sender_qq'] in get_group_admin(message_info):
             leave_group(message_info)
         else:
             send_public_msg('请让管理员发送该命令', message_info['group_qq'])
-    elif message == '/bot off' and message_info['sender_qq'] in get_group_admin(message_info):
+    elif message[1:] == 'bot off' and message_info['sender_qq'] in get_group_admin(message_info):
         from main_handle import set_active
         set_active(message_info, False)
 
