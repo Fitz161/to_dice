@@ -929,7 +929,7 @@ def send_admin_msg(message_info):
         show_command_doc(message_info)
     elif message[1:] == 'jrrp':
         today_fortune(message_info)
-    elif message[1:7] == '/phasor':
+    elif message[1:7] == 'phasor':
         calculate_phasor(message_info)
     if not message_info['is_group']:
         return
