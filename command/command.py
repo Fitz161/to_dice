@@ -232,7 +232,6 @@ def sign_in_response(message_info: dict):
 
 @add_command('运势')
 def todays_fortune(message_info):
-    from random import randint
     send_string = f'[CQ:at,qq={message_info["sender_qq"]}]\n今天的人品值是:{randint(1, 100)}'
     if message_info['is_private']:
         send_private_msg(send_string, message_info['sender_qq'])
@@ -757,6 +756,7 @@ def translate(message_info):
         elif message_info['is_group']:
             send_public_msg(send_string, message_info['group_qq'])
         return
+    #构造百度翻译api的请求参数
     salt = randint(1000000000, 9999999999)
     md5 = hashlib.md5()
     md5.update(f'{BAIDU_TRANS_ID}{text}{salt}{BAIDU_TRANS_KEY}'.encode('utf8'))
