@@ -91,8 +91,8 @@ def handle_message(message_queue: Queue):
                         threading.Thread(target=command_dict.get(message[:3]), args=(message_info,)).start()
                     elif message[0] in command_dict.keys():
                         threading.Thread(target=command_dict.get(message[0]), args=(message_info,)).start()
-                    elif message in admin_command_dict.keys() and message_info['sender_qq'] in ADMIN_LIST:
-                        threading.Thread(target=admin_command_dict.get(message), args=(message_info,)).start()
+                    elif message[:3] in admin_command_dict.keys() and message_info['sender_qq'] in ADMIN_LIST:
+                        threading.Thread(target=admin_command_dict.get(message[:3]), args=(message_info,)).start()
                     learn_response(message_info)
         else:
             sleep(PAUSE_TIME)
@@ -106,21 +106,21 @@ def timing_task():
             with open(PATTERN_PATH) as f:
                 data:dict = load(f)['evening']
                 send_message = data.get(str(randint(1, len(data))))
-            for group_qq in SEND_LIST:
+            for group_qq in read_json_file(DATA_PATH)['send_list']:
                 send_public_msg(send_message, group_qq)
             sleep(25000)
         elif now.hour == 7 and now.minute == 0 and now.second == 0:
             with open(PATTERN_PATH) as f:
                 data:dict = load(f)['morning']
                 send_message = data.get(str(randint(1, len(data))))
-            for group_qq in SEND_LIST:
+            for group_qq in read_json_file(DATA_PATH)['send_list']:
                 send_public_msg(send_message, group_qq)
             sleep(61000)
         sleep(1)
 
 
 def get_black_active(message_info):
-    with open(BLACK_LIST_PATH) as f:
+    with open(DATA_PATH) as f:
         black_list: list = load(f)['black_list']
     if not message_info['is_group']:
         return black_list, None
@@ -133,6 +133,7 @@ def get_black_active(message_info):
     with open(ACTIVE_PATH, 'w') as f:
         dump(active_dict, f)
     return black_list, is_active
+
 
 def set_active(message_info, b:bool):
     if not message_info['is_group']:
