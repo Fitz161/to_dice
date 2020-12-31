@@ -22,6 +22,7 @@ def reset(message_info):
     with open(DATA_PATH, "w") as f:
         dump(data_dict, f)
 
+
 def server_stat()->str:
     mem = {}
     with open(MEMO_INFO_PATH) as f:
@@ -72,3 +73,28 @@ def bot_exit(message_info):
     elif message_info['is_group']:
         send_public_msg(send_string, message_info['group_qq'])
     exit()
+
+
+@add_admin_command('黑名单')
+def black_list(message_info):
+    print('hello')
+    try:
+        operate_type, qq = message_info['message'][3:].split()
+    except:
+        return
+    with open(DATA_PATH) as f:
+        total_data: dict = load(f)
+    black_list: list = total_data['black_list']
+    if operate_type == 'add':
+        black_list.append(int(qq)) if int(qq) not in black_list else None
+        send_string = f'黑名单添加{qq}成功'
+    elif operate_type == 'del':
+        if int(qq) in black_list:
+            black_list.remove(int(qq))
+            send_string = f'从黑名单删除{qq}成功'
+    elif operate_type == 'show':
+        send_string = '黑名单:\n' + str(black_list)
+    total_data['black_list'] = black_list
+    with open(DATA_PATH, 'w') as f:
+        dump(total_data, f)
+    send_private_msg(send_string, message_info['sender_qq'])
