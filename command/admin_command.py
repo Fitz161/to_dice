@@ -77,7 +77,6 @@ def bot_exit(message_info):
 
 @add_admin_command('黑名单')
 def black_list(message_info):
-    print('hello')
     try:
         operate_type, qq = message_info['message'][3:].split()
     except:
@@ -92,9 +91,42 @@ def black_list(message_info):
         if int(qq) in black_list:
             black_list.remove(int(qq))
             send_string = f'从黑名单删除{qq}成功'
+        else:
+            send_string = f'{qq}不在黑名单中'
     elif operate_type == 'show':
         send_string = '黑名单:\n' + str(black_list)
+    else:
+        send_string = None
     total_data['black_list'] = black_list
+    with open(DATA_PATH, 'w') as f:
+        dump(total_data, f)
+    if send_string:
+        send_private_msg(send_string, message_info['sender_qq'])
+
+
+@add_admin_command('问候语')
+def black_list(message_info):
+    try:
+        operate_type, qq = message_info['message'][3:].split()
+    except:
+        return
+    with open(DATA_PATH) as f:
+        total_data: dict = load(f)
+    send_list: list = total_data['send_list']
+    if operate_type == 'add':
+        send_list.append(int(qq)) if int(qq) not in send_list else None
+        send_string = f'定时问候列表中添加{qq}成功'
+    elif operate_type == 'del':
+        if int(qq) in send_list:
+            send_list.remove(int(qq))
+            send_string = f'从定时问候列表中删除{qq}成功'
+        else:
+            send_string = f'{qq}不在定时问候列表中'
+    elif operate_type == 'show':
+        send_string = '定时问候列表:\n' + str(send_list)
+    else:
+        send_string = None
+    total_data['send_list'] = send_list
     with open(DATA_PATH, 'w') as f:
         dump(total_data, f)
     send_private_msg(send_string, message_info['sender_qq'])
