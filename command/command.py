@@ -30,6 +30,11 @@ def dot_command(command):
     return add_func
 
 
+def read_json_file(file_path):
+    with open(file_path) as f:
+        return load(f)
+
+
 def send_private_msg(send_string, QQ):
     data = {
         'message': send_string,
@@ -183,7 +188,7 @@ def sign_in_response(message_info: dict):
     if message_info['message'] != '签到':
         return
     QQ = message_info['sender_qq']
-    with open(DATA_PATH) as f:
+    with open(SIGN_PATH) as f:
         total_data: dict = load(f)
     total_data.setdefault(str(QQ), {'days': 0, 'today': 0, 'points': 0})
     data = total_data[str(QQ)]
@@ -200,7 +205,7 @@ def sign_in_response(message_info: dict):
         send_private_msg(send_string, QQ)
     elif message_info['is_group']:
         send_public_msg(send_string, message_info['group_qq'])
-    with open(DATA_PATH, "w") as f:
+    with open(SIGN_PATH, "w") as f:
         dump(total_data, f)
 
 
@@ -209,7 +214,7 @@ def sign_in_response(message_info: dict):
     if message_info['message'] != '打卡':
         return
     QQ = message_info['sender_qq']
-    with open(DATA_PATH) as f:
+    with open(SIGN_PATH) as f:
         total_data: dict = load(f)
     total_data.setdefault('%s' % QQ, {'days': 0, 'today': 0, 'points': 0})
     data = total_data['%s' % QQ]
@@ -226,7 +231,7 @@ def sign_in_response(message_info: dict):
         send_private_msg(send_string, QQ)
     elif message_info['is_group']:
         send_public_msg(send_string, message_info['group_qq'])
-    with open(DATA_PATH, "w") as f:
+    with open(SIGN_PATH, "w") as f:
         dump(total_data, f)
 
 
