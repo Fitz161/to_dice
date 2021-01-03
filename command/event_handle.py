@@ -61,14 +61,15 @@ def group_add_request(message_info:dict):
 
 def add_black_list(message_info):
     from json import load, dump
-    with open(BLACK_LIST_PATH) as f:
+    with open(DATA_PATH) as f:
         total_data: dict = load(f)
     black_list: list = total_data['black_list']
     group_qq = message_info.get('group_qq')
     black_list.append(group_qq) if group_qq not in black_list else None
     total_data['black_list'] = black_list
-    with open(BLACK_LIST_PATH, 'w') as f:
+    with open(DATA_PATH, 'w') as f:
         dump(total_data, f)
+
 
 def leave_group(message_info):
     group_qq = message_info.get('group_qq')
