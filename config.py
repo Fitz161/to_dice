@@ -6,11 +6,12 @@ PORT = 5701
 CARD_PATH = ["/packages/cards1/", "/packages/cards2/","/packages/cards3/",
         "/packages/cards4/","/packages/cards5/", "/packages/cards6/", "/packages/cards7/"]
 ADMIN_LIST = []
-SEND_LIST = []
+#SEND_LIST = []
 #BLACK_LIST = []
 REPEAT_SELECT = True
 MULTI_THREADING = True
 SAVE_QUALITY = 50
+SEND_LENGTH = 100
 # IS_ACTIVE = True
 # def get_active()->bool: #python中，不同进程之间不能共享全局变量，在创建进程时，python会把当前存在的全局变量全部copy一份，
 #     return IS_ACTIVE    # 放进自己的空间中，之后各个进程之间的同名变量不再有任何关系。。各管各的。
@@ -18,18 +19,18 @@ SAVE_QUALITY = 50
 #     global IS_ACTIVE
 #     IS_ACTIVE = b
 
-SAVE_PATH = '/packages/pics/'
-DATA_PATH = '/bot/data.json'
-LEARN_PATH = '/bot/learn.json'
-SONG_PATH = '/bot/search_song.json'
-SEND_LENGTH = 100
-KNOWLEDGE_PATH = '/bot/knowledge.json'
+BOT_PATH = '' #bot文件夹所在路径
+SAVE_PATH = BOT_PATH + '/data/pics/'
+SIGN_PATH = BOT_PATH + '/data/data/sign_in.json'
+LEARN_PATH = BOT_PATH + '/data/data/learn.json'
+SONG_PATH = BOT_PATH + '/data/data/search_song.json'
+KNOWLEDGE_PATH = BOT_PATH +'/data/data/knowledge.json'
+DATA_PATH = BOT_PATH +'/data/data/data_list.json'
+ACTIVE_PATH = BOT_PATH +'/data/data/is_active.json'
+PATTERN_PATH = BOT_PATH +'/data/data/pattern_message.json'
+HELP_DOC_PATH = BOT_PATH +'/data/pics/help1.png'
 MEMO_INFO_PATH = '/proc/meminfo'
 CPU_INFO_PATH = '/proc/loadavg'
-BLACK_LIST_PATH = '/bot/black_list.json'
-ACTIVE_PATH = '/bot/is_active.json'
-PATTERN_PATH = '/bot/pattern_message.json'
-HELP_DOC_PATH = '/packages/pics/help1.png'
 
 #UserAgent = r'Mozilla/5.0 (Windows NT 10.0; WOW64) AppleWebKit/537.36(KHTML, like Gecko) Chrome/78.0.3904.108 Safari/537.36'
 #UserAgent = r"Mozilla/5.0 (X11; Linux x86_64) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/73.0.3683.103 Safari/537.36 OPR/60.0.3255.83"
