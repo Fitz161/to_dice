@@ -108,6 +108,16 @@ def timing_task():
                 send_message = data.get(str(randint(1, len(data))))
             for group_qq in read_json_file(DATA_PATH)['send_list']:
                 send_public_msg(send_message, group_qq)
+            path = BOT_PATH + '/data/data/'
+            backup_path = BOT_PATH + '/data/backup_data/'
+            date = strftime("%Y_%m_%d", localtime()) + '/'
+            os.mkdir(backup_path + date)
+            file_names = list(os.walk(path))[0][2]
+            for file_name in file_names:
+                with open(path + file_name) as f:
+                    with open(backup_path + date + file_name, 'w') as fp:
+                        fp.write(f.read())
+            send_private_msg(f'昨日数据已备份到 {backup_path + date} 文件夹下', ADMIN_LIST[0])
             sleep(25000)
         elif now.hour == 7 and now.minute == 0 and now.second == 0:
             with open(PATTERN_PATH) as f:
