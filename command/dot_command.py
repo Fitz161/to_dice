@@ -26,7 +26,11 @@ def dot_send_msg(message_info:dict):
 
 def show_command_doc(message_info):
     command = message_info['message'][5:].strip()
-    if command == '翻译':
+    if not command:
+        send_string = '签到 打卡\n单抽 十连 百连[1-7]\n要礼物 热榜\n点歌/点歌 网易云 [歌名]\n冷知识 av BV\n' \
+                      '百度/搜索[1-3] [内容]\n翻译成[语言] [文本]\n热评[条数](编号) [歌名]\n' \
+                      '/send向管理员发送消息\n/bot on /bot off可以开启/关闭bot\n如果想让bot退群，请输入/leave哦'
+    elif command == '翻译':
         send_string = '翻译格式:\n翻译成[目标语言] [带翻译文本]支持翻译的语言:\n'
         for language in LANGUAGE_DICT:
             send_string += language + ' '
@@ -47,9 +51,11 @@ def show_command_doc(message_info):
                       '6表示使用知乎热榜前50条制作词云图\n7表示使用网易云热评制作词云图,其命令格式为\n' \
                       '词云图7[歌曲编号][字体类型(可选)] [歌名]\n[字体类型]参数可选数字1-4, 1-宋体 2-黑体 3-书宋 4-楷体'
     else:
-        send_string = '签到 打卡\n单抽 十连 百连[1-7]\n要礼物 热榜\n点歌/点歌 网易云 [歌名]\n冷知识 av BV\n' \
-                      '百度/搜索[1-3] [内容]\n翻译成[语言] [文本]\n热评[条数](编号) [歌名]\n' \
-                      '/send向管理员发送消息\n/bot on /bot off可以开启/关闭bot\n如果想让bot退群，请输入/leave哦'
+        send_string = '没有找到这个命令呢\n可以试试:\n'
+        command_list = ['翻译', '搜索', '热评', '点歌', '抽卡', 'phasor', '词云图']
+        for item in command_list:
+            if item.__contains__(item):
+                send_string += item + '\n'
     send_long_msg(message_info, send_string)
 
 
