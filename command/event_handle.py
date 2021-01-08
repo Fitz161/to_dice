@@ -1,5 +1,6 @@
 import requests
 from time import sleep
+from json import load
 
 from config import *
 from command.command import send_public_msg, send_private_msg
@@ -20,6 +21,11 @@ def get_group_admin(message_info):
 def welcome(message_info:dict):
     QQ = message_info['sender_qq']
     group_qq = message_info.get('group_qq')
+    with open(ACTIVE_PATH) as f:
+        active_dict: dict = load(f)
+    is_enable:bool = active_dict[str(group_qq)]['welcome']
+    if not is_enable:
+        return
     api_url = apiBaseUrl + apiGroupInfo
     data = {
         'group_id': group_qq
