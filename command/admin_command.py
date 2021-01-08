@@ -78,7 +78,7 @@ def bot_exit(message_info):
 @add_admin_command('黑名单')
 def black_list(message_info):
     try:
-        operate_type, qq = message_info['message'][3:].split()
+        operate_type, qq = message_info['message'][3:].strip().split()
     except:
         return
     with open(DATA_PATH) as f:
@@ -107,7 +107,7 @@ def black_list(message_info):
 @add_admin_command('问候语')
 def black_list(message_info):
     try:
-        operate_type, qq = message_info['message'][3:].split()
+        operate_type, qq = message_info['message'][3:].strip().split()
     except:
         return
     with open(DATA_PATH) as f:
