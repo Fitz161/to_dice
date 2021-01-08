@@ -15,8 +15,15 @@ def get_message(message_queue: Queue):
         black_list, is_active = get_black_active(message_info)
         if message_info['message'] == '/bot on':
             set_active(message_info, True)
-        if message_info['group_qq'] in black_list or message_info['sender_qq'] in black_list or is_active == False:
+        elif message_info['is_at_bot']:
+            #bot被at后始终会响应命令，不受/bot off限制
+            message_info['message'] = message_info['message'][11 + len(str(message_info['bot_qq']))]
+            if message_info['message'] == '/bot on':
+                set_active(message_info, True)
+            return message_info
+        if message_info['group_qq'] in black_list or message_info['sender_qq'] in black_list or not is_active:
             return None
+        #通知消息处理
         elif not message_info['is_notice'] and not message_info['is_anonymous'] and not message_info['is_request']:
             return message_info
         elif message_info['is_notice'] :
@@ -57,6 +64,7 @@ def extract_message(message: dict):
     message_info['sub_type'] = message.get('sub_type')
     message_info['raw_message'] = message.get('raw_message')
     message_info['bot_qq'] = message.get('self_id')
+    message_info['is_at_bot'] = True if is_at_bot(message_info) else False
     message_info['is_group_increase'] = True if notice_type == 'group_increase' else False
     message_info['is_group_kick'] = True if notice_type == 'group_decrease' \
                                             and message_info['sub_type'] == 'kick_me' else False
@@ -160,3 +168,16 @@ def set_active(message_info, b:bool):
     active_dict[str(group_qq)] = b
     with open(ACTIVE_PATH, 'w') as f:
         dump(active_dict, f)
+
+
+def is_at_bot(message_info)->bool:
+    """判断bot是否被at"""
+    index = message_info['message'].find(']')
+    if not index == -1:
+        cq_msg = message_info['message'][:index+1]
+    else:
+        cq_msg = 0
+    if cq_msg == f'[CQ:at,qq={message_info["bot_qq"]}]':
+        return True
+    else:
+        return False
