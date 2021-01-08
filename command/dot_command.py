@@ -51,12 +51,12 @@ def show_command_doc(message_info):
                       '6表示使用知乎热榜前50条制作词云图\n7表示使用网易云热评制作词云图,其命令格式为\n' \
                       '词云图7[歌曲编号][字体类型(可选)] [歌名]\n[字体类型]参数可选数字1-4, 1-宋体 2-黑体 3-书宋 4-楷体'
     else:
-        send_string = '没有找到这个命令呢\n可以试试:\n'
+        send_string = '没有找到这个命令呢\n可以试试:/help\n'
         command_list = ['翻译', '搜索', '热评', '点歌', '抽卡', 'phasor', '词云图']
         for item in command_list:
-            if item.__contains__(item):
+            if item.__contains__(command):
                 send_string += item + '\n'
-    send_long_msg(message_info, send_string)
+    send_long_msg(message_info, send_string[:-1])
 
 
 def calculate_phasor(message_info):
@@ -131,8 +131,8 @@ def expression(message_info):
     raw_str = message_info['message'][2:]
     raw_str = raw_str.replace('x', '*').replace('X', '*').replace('d', 'D')
     print(raw_str)
-    pattern = re.compile('\d{0,2}D\d+')
-    pattern2 = re.compile('(\d{0,2})D(\d+)')
+    pattern = re.compile('\d{0,2}D\d{1,3}')
+    pattern2 = re.compile('(\d{0,2})D(\d{1,3})')
     offset = 0
     # print(re.search(pattern, raw_str))
     while re.search(pattern, raw_str[offset:]):
@@ -168,6 +168,14 @@ def expression(message_info):
 
 
 def today_fortune(message_info):
+    from config import ACTIVE_PATH
+    from json import load
+    with open(ACTIVE_PATH) as f:
+        active_dict: dict = load(f)
+    if message_info['is_group']:
+        enable_jrrp = active_dict[str(message_info['group_qq'])]
+        if not enable_jrrp:
+            return
     from random import randint
     send_string = f'[CQ:at,qq={message_info["sender_qq"]}]\n今天的人品值是:{randint(1, 100)}'
     if message_info['is_private']:
