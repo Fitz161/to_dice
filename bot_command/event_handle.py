@@ -3,7 +3,7 @@ from time import sleep
 from json import load
 
 from config import *
-from command.command import send_public_msg, send_private_msg
+from bot_command.command import send_public_msg, send_private_msg
 
 def get_group_admin(message_info):
     if not message_info['is_group']:

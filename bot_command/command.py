@@ -94,7 +94,7 @@ def get_one_page(url, type='content'):
         return "time_out"
 
 
-from command.dot_command import *
+from bot_command.dot_command import *
 #避免command和dot_command两个文件循环import
 
 def concat_images(image_names, path, type):
@@ -938,7 +938,7 @@ def send_admin_msg(message_info):
         calculate_phasor(message_info)
     if not message_info['is_group']:
         return
-    from command.event_handle import get_group_admin, leave_group
+    from bot_command.event_handle import get_group_admin, leave_group
     if message[1:] == 'leave' or message[1:] == 'dismiss':
         if message_info['sender_qq'] in get_group_admin(message_info):
             leave_group(message_info)

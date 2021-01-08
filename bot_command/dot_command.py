@@ -1,7 +1,7 @@
 import requests
 
 from config import apiBaseUrl, apiGroupInfo, ADMIN_LIST, LANGUAGE_DICT
-from command.command import send_public_msg, send_private_msg, send_long_msg
+from bot_command.command import send_public_msg, send_private_msg, send_long_msg
 
 
 def dot_send_msg(message_info:dict):

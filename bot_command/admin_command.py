@@ -1,6 +1,6 @@
 from json import load, dump
 import requests
-from command.command import send_private_msg, send_public_msg
+from bot_command.command import send_private_msg, send_public_msg
 from config import DATA_PATH, MEMO_INFO_PATH, CPU_INFO_PATH
 
 
