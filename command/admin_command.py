@@ -130,3 +130,15 @@ def black_list(message_info):
     with open(DATA_PATH, 'w') as f:
         dump(total_data, f)
     send_private_msg(send_string, message_info['sender_qq'])
+
+
+def bot_on(message_info, is_active):
+    from config import BOT_NAME
+    if not is_active:
+        send_string = BOT_NAME + '可没有在偷懒哦'
+    else:
+        send_string = BOT_NAME + '已经开始工作了哦'
+    if message_info['is_private']:
+        send_private_msg(send_string, message_info['sender_qq'])
+    elif message_info['is_group']:
+        send_public_msg(send_string, message_info['group_qq'])
