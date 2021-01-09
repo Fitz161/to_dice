@@ -70,8 +70,9 @@ def add_black_list(message_info):
     with open(DATA_PATH) as f:
         total_data: dict = load(f)
     black_list: list = total_data['black_list']
+    white_list:list = total_data['white_list']
     group_qq = message_info.get('group_qq')
-    black_list.append(group_qq) if group_qq not in black_list else None
+    black_list.append(group_qq) if group_qq not in black_list and group_qq not in white_list else None
     total_data['black_list'] = black_list
     with open(DATA_PATH, 'w') as f:
         dump(total_data, f)

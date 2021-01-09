@@ -104,6 +104,35 @@ def black_list(message_info):
         send_private_msg(send_string, message_info['sender_qq'])
 
 
+@add_admin_command('白名单')
+def white_list(message_info):
+    try:
+        operate_type, qq = message_info['message'][3:].strip().split()
+    except:
+        return
+    with open(DATA_PATH) as f:
+        total_data: dict = load(f)
+    white_list: list = total_data['white_list']
+    if operate_type == 'add':
+        white_list.append(int(qq)) if int(qq) not in white_list else None
+        send_string = f'白名单添加{qq}成功'
+    elif operate_type == 'del':
+        if int(qq) in white_list:
+            white_list.remove(int(qq))
+            send_string = f'从白名单删除{qq}成功'
+        else:
+            send_string = f'{qq}不在白名单中'
+    elif operate_type == 'show':
+        send_string = '白名单:\n' + str(white_list)
+    else:
+        send_string = None
+    total_data['black_list'] = white_list
+    with open(DATA_PATH, 'w') as f:
+        dump(total_data, f)
+    if send_string:
+        send_private_msg(send_string, message_info['sender_qq'])
+
+
 @add_admin_command('问候语')
 def black_list(message_info):
     try:
