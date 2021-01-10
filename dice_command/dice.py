@@ -37,7 +37,6 @@ def r_expression(message_info):
         else:
             send_string = nickname + '掷出了' + dice_name + '骰子' + time_str + '次:\n'
             for index in range(times):
-                print(point_express)
                 send_str, result = express(point_express)
                 if result is None:
                     return send_str
@@ -119,11 +118,8 @@ def express(raw_str):
         while re.search(pattern3, exp_string[exp_offset:]):
             exp_match = re.search(pattern3, exp_string[exp_offset:])
             msg_match = re.search(pattern3, msg_string[msg_offset:])
-            print(exp_match.span(0), exp_match.group(0))
-            # span获取match的范围，group(0)获得match到的内容
             type, times = exp_match.groups()
             times = 1 if not times else int(times)
-            print(times, type)
             if type == 'P':
                 punish_list = []
                 random_num = randint(1, 100)
@@ -160,14 +156,15 @@ def express(raw_str):
                 msg_str = exp_str = ''
             msg_string = msg_string.replace(msg_match.group(0), msg_str, 1)
             exp_string = exp_string.replace(exp_match.group(0), exp_str, 1)
+            # span获取match的范围，group(0)获得match到的内容
             msg_offset += msg_match.span(0)[1] - len(msg_match.group(0)) + len(msg_str)
             exp_offset += exp_match.span(0)[1] - len(exp_match.group(0)) + len(exp_str)
     try:
         if raw_str.__contains__('P') or raw_str.__contains__('B'):
-            point = str(round(eval(exp_string)))
+            point = round(eval(exp_string))
             send_string = f'{raw_str}={msg_string}={exp_string}={point}'
         else:
-            point = str(round(eval(raw_str)))
+            point = round(eval(raw_str))
             send_string = f'{temp}={raw_str}={point}'
         return send_string, point
     except:
