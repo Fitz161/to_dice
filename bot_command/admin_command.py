@@ -1,7 +1,7 @@
 from json import load, dump
 import requests
 from bot_command.command import send_private_msg, send_public_msg
-from config import DATA_PATH, MEMO_INFO_PATH, CPU_INFO_PATH
+from config import DATA_PATH, MEMO_INFO_PATH, CPU_INFO_PATH, SIGN_PATH
 
 
 admin_command_dict = {}
@@ -15,11 +15,11 @@ def add_admin_command(command):
 
 @add_admin_command("重置")
 def reset(message_info):
-    with open(DATA_PATH) as f:
+    with open(SIGN_PATH) as f:
         data_dict = load(f)
     for name in data_dict.keys():
         data_dict[name]["today"] = 0
-    with open(DATA_PATH, "w") as f:
+    with open(SIGN_PATH, "w") as f:
         dump(data_dict, f)
 
 
