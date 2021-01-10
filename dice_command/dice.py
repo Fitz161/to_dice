@@ -11,10 +11,9 @@ def r_expression(message_info):
     QQ = message_info['sender_qq']
     raw_str = raw_str.upper().replace('X', '*')
     print(raw_str)
-    all_pattern = '([0-9D]+)D([0-9D]+)'
-    illegal_char = re.search('[^0-9Dpkbhs#+-/*]', raw_str).start()
+    illegal_char = re.search('[^0-9Dpkbhs#+-/*]', raw_str)
     if illegal_char:
-        dice_name = '有关 ' + raw_str[illegal_char:] + ' 的'
+        dice_name = '有关 ' + raw_str[illegal_char.start():] + ' 的'
     else:
         dice_name = ''
     if raw_str.__contains__('#'):
@@ -42,8 +41,6 @@ def r_expression(message_info):
                     send_string += punish(point_express)
                 elif point_express.__contains__('B'):
                     send_string += reward(point_express)
-                elif point_express.__contains__('K'):
-                    send_string = k_expression(point_express)
                 else:
                     result = express(point_express)[0]
                     if not result:
@@ -57,8 +54,6 @@ def r_expression(message_info):
             send_string += punish(point_express)
         elif point_express.__contains__('B'):
             send_string += reward(point_express)
-        elif point_express.__contains__('K'):
-            send_string = k_expression(point_express)
         else:
             result = express(point_express)[0]
             if not result:
@@ -68,17 +63,29 @@ def r_expression(message_info):
 
 
 def express(raw_str):
-    pattern = re.compile('\d{0,2}D\d{1,3}')
+    pattern = re.compile('(\d{0,2}D\d+)(K{0,1}\d+)')
     pattern2 = re.compile('(\d{0,2})D(\d{1,3})')
     offset = 0
     while re.search(pattern, raw_str[offset:]):
         match = re.search(pattern, raw_str[offset:])
         match2 = re.search(pattern2, match.group(0))
-        times, limit = match2.groups()
+        times, limit = map(int, match2.groups())
         times = 1 if not times else times
+        if limit < 0:
+            return  '你见过负数面的骰子吗？'
+        elif limit > 100:
+            return '你给我找个面数超过100的骰子？'
+        try:
+            count = int(match.group(2)[1:])
+            if count > 9:
+                return '好多好多骰子啊（晕'
+            elif count > times:
+                return '骰子数目好像不对吧，您再算算？'
+        except:
+            count = -1
         if times == 1:
             num_str = str(random.randint(1, int(limit)))
-        else:
+        elif count == -1:
             num_str = '('
             for i in range(0, int(times)):
                 random_num = random.randint(1, int(limit))
@@ -87,9 +94,20 @@ def express(raw_str):
                 else:
                     num_str += '+' + str(random_num)
             num_str += ')'
+        else:
+            num_str = '('
+            random_num = []
+            for i in range(times):
+                random_num.append(random.randint(1, limit))
+            random_num.sort(reverse=True)
+            for index, num in zip(range(count), random_num[:count]):
+                if index == 0:
+                    num_str += str(num)
+                else:
+                    num_str += '+' + str(num)
+            num_str += ')'
         raw_str = raw_str.replace(match.group(0), num_str, 1)
         offset += match.span(0)[1] - len(match.group(0)) + len(num_str)
-    print(raw_str)
     try:
         send_string = f'{raw_str}={str(round(eval(raw_str)))}'
         return send_string, round(eval(raw_str))
@@ -98,12 +116,8 @@ def express(raw_str):
 
 
 def punish(expression):
-    return '程序猿正在爆肝开发中'
+    match = re.search('p', expression)
 
 
 def reward(expression):
-    return '程序猿正在爆肝开发中'
-
-
-def k_expression(expression):
     return '程序猿正在爆肝开发中'
