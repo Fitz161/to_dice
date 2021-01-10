@@ -923,13 +923,13 @@ def word_cloud_gen(message_info):
 
 
 @add_command('/')
-def send_admin_msg(message_info):
+def slash_command(message_info):
     message:str = message_info['message']
     if message[1:5] == 'send':
         dot_send_msg(message_info)
     elif message[1:2] == 'r':
-        from dice_command.random_dice import r_expression
-        r_expression(message_info)
+        from bot_command.dot_command import expression
+        expression(message_info)
     elif message[1:5] == 'help':
         show_command_doc(message_info)
     elif message[1:] == 'jrrp':
@@ -938,16 +938,16 @@ def send_admin_msg(message_info):
         calculate_phasor(message_info)
     if not message_info['is_group']:
         return
-    from bot_command.event_handle import get_group_admin, leave_group
     if message[1:] == 'leave' or message[1:] == 'dismiss':
+        from bot_command.event_handle import get_group_admin, leave_group
         if message_info['sender_qq'] in get_group_admin(message_info):
             leave_group(message_info)
         else:
             send_public_msg('请让管理员发送该命令', message_info['group_qq'])
     elif message[1:] == 'bot off':
+        from bot_command.event_handle import get_group_admin, leave_group
         if not message_info['sender_qq'] in get_group_admin(message_info):
             send_public_msg(BOT_NAME + '只聆听管理员的召唤哦', message_info['group_qq'])
         else:
             from main_handle import set_active
             set_active(message_info, False)
-
