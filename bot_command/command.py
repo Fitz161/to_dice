@@ -79,6 +79,23 @@ def send_long_msg(message_info, send_string):
         sleep(PAUSE_TIME * 2)
 
 
+def get_group_name(group_qq)->str:
+    api_url = apiBaseUrl + apiGroupInfo
+    data = {
+        'group_id': group_qq
+    }
+    response = requests.post(api_url, data=data)
+    try:
+        return response.json()['data']['group_name']
+    except:
+        return ''
+
+
+def get_nickname(QQ):
+    data:dict = read_json_file(DICE_DATA)
+    return data[str(QQ)]['nickname']
+
+
 def get_one_page(url, type='content'):
     """使用get请求访问指定url，并根据type以指定形式返回网页内容"""
     requests.session().keep_alive = False
