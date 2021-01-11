@@ -95,6 +95,7 @@ def get_one_page(url, type='content'):
 
 
 from bot_command.dot_command import *
+from dice_command.dice_handle import main_handle
 #避免command和dot_command两个文件循环import
 
 def concat_images(image_names, path, type):
@@ -920,6 +921,16 @@ def word_cloud_gen(message_info):
         send_private_msg(send_string, message_info['sender_qq'])
     elif message_info['is_group']:
         send_public_msg(send_string, message_info['group_qq'])
+
+
+@add_command('.')
+def fun(message_info):
+    main_handle(message_info)
+
+
+@add_command('。')
+def fun(message_info):
+    main_handle(message_info)
 
 
 @add_command('/')
