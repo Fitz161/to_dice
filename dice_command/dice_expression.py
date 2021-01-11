@@ -1,21 +1,40 @@
 import re
 from random import randint
 
-from bot_command.command import read_json_file
+from bot_command.command import read_json_file, send_private_msg, get_group_name
 from config import DICE_DATA
 
 
 def r_expression(message_info):
+    """对所有掷骰表达式的处理函数"""
     raw_str:str = message_info['message'][2:]
     nickname = message_info['nickname']
     QQ = message_info['sender_qq']
+    group_qq = message_info['group_qq']
+    hide_str = f'惊！{nickname}好像偷偷骰了一颗骰子呢~'
     raw_str = raw_str.upper().replace('X', '*')
     print(raw_str)
+    #判断是否为直接发送最终点数(s),和暗骰(h)  s,h均为可选参数,s需位于h前
+    if raw_str[0] == 's':
+        is_skip = True
+        if raw_str[1] == 'h':
+            is_hide = True
+            raw_str = raw_str[2:]
+        else:
+            raw_str = raw_str[1:]
+            is_hide = False
+    elif raw_str[0] == 'h':
+        is_hide = True
+        is_skip = False
+    else:
+        is_hide = False
+        is_skip = False
     illegal_char = re.search('[^0-9DPKBHS#+-/*]', raw_str)
     if illegal_char:
         dice_name = '有关 ' + raw_str[illegal_char.start():] + ' 的'
     else:
         dice_name = ''
+
     if raw_str.__contains__('#'):
         #使用相同表达式多次掷骰
         try:
@@ -33,23 +52,47 @@ def r_expression(message_info):
             send_string = f'{nickname}掷出了{dice_name}骰子{times}次:\nD{point}='
             for index in range(times):
                 send_string += str(randint(1, point)) + ', '
-            return send_string[:-1]
+            if not is_hide:
+                return send_string[:-1]
+            else:
+                group_name = get_group_name(group_qq)
+                send_msg = f'在[{group_name}]({group_qq})中{send_string[:-1]}'
+                send_private_msg(send_msg, QQ)
+                return hide_str
         else:
             send_string = nickname + '掷出了' + dice_name + '骰子' + time_str + '次:\n'
             for index in range(times):
                 send_str, result = express(point_express)
                 if result is None:
                     return send_str
-                send_string += send_str + '\n'
-            return send_string[:-1]
+                if is_skip:
+                    send_string += str(result) + ' '
+                else:
+                    send_string += send_str + '\n'
+            if not is_hide:
+                return send_string[:-1]
+            else:
+                group_name = get_group_name(group_qq)
+                send_msg = f'在[{group_name}]({group_qq})中{send_string[:-1]}'
+                send_private_msg(send_msg, QQ)
+                return hide_str
     else:
         point_express:str = raw_str
         send_string = nickname + '掷出了' + dice_name + '骰子,结果是什么呢\n'
         send_str, result = express(point_express)
         if result is None:
             return send_str
-        send_string += send_str + '\n'
-        return send_string[:-1]
+        if is_skip:
+            send_string += str(result) + ' '
+        else:
+            send_string += send_str + '\n'
+        if not is_hide:
+            return send_string[:-1]
+        else:
+            group_name = get_group_name(group_qq)
+            send_msg = f'在[{group_name}]({group_qq})中{send_string[:-1]}'
+            send_private_msg(send_msg, QQ)
+            return hide_str
 
 
 def express(raw_str):
