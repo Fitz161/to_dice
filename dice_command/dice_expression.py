@@ -162,7 +162,7 @@ def express(raw_str):
     try:
         if raw_str.__contains__('P') or raw_str.__contains__('B'):
             point = round(eval(exp_string))
-            send_string = f'{raw_str}={msg_string}={exp_string}={point}'
+            send_string = f'{temp}={raw_str}={msg_string}={exp_string}={point}'
         else:
             point = round(eval(raw_str))
             send_string = f'{temp}={raw_str}={point}'
