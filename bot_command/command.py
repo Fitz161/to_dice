@@ -35,6 +35,13 @@ def read_json_file(file_path):
         return load(f)
 
 
+def change_json_file(file_path, qq, key, value):
+    data = read_json_file(file_path)
+    data[str(qq)][key] = value
+    with open(file_path, 'w') as f:
+        dump(data, f)
+
+
 def send_private_msg(send_string, QQ):
     data = {
         'message': send_string,
