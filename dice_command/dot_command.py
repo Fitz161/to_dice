@@ -1,6 +1,9 @@
 import requests
+from json import dump
+import random
 
-from config import apiBaseUrl, apiGroupInfo, ADMIN_LIST, LANGUAGE_DICT
+from config import apiBaseUrl, apiGroupInfo, LANGUAGE_DICT, DICE_DATA, OB_DATA, BOT_NAME, ACTIVE_PATH, NAME_DATA
+from bot_command.command import change_json_file, read_json_file, get_nickname
 
 
 def dot_send_msg(message_info:dict):
@@ -143,3 +146,88 @@ def today_fortune(message_info):
     from random import randint
     send_string = f'{message_info["nickname"]}\n今天的人品值是:{randint(1, 100)}'
     return send_string
+
+
+def set_handle(message_info):
+    qq = message_info['sender_qq']
+    group_qq = message_info['group_qq']
+    nickname = message_info['nickname']
+    raw_str:str = message_info['message'][4:]
+    if not raw_str:
+        change_json_file(DICE_DATA, qq, 'set', 100)
+        return f'已将{nickname}的默认骰类型更改为D100'
+    if raw_str[:6] == 'setcoc':
+        try:
+            set_point = int(raw_str.strip())
+            if set_point < 0 or set_point > 5:
+                set_point = 0
+        except:
+            set_point = 0
+        return
+    else:
+        try:
+            set_point = int(raw_str.strip())
+            if set_point > 0 and set_point <= 100:
+                change_json_file(DICE_DATA, qq, 'set', set_point)
+                return f'已将{nickname}的默认骰类型更改为D{set_point}'
+        except:
+            return
+
+
+def observer_handle(message_info):
+    if not message_info['is_group']:
+        return'旁观模式: .ob (exit/list/clr/on/off)\n.ob //加入旁观可以看到他人暗骰结果.ob exit //退出旁观模式\n' \
+              '.ob list //查看群内旁观者\n.ob clr //清除所有旁观者\n.ob on //全群允许旁观模式\n' \
+              '.ob off //禁用旁观模式\n暗骰与旁观仅在群聊中有效'
+    message:str = message_info['message'][3:]
+    group_qq = message_info['group_qq']
+    QQ = message_info['sender_qq']
+    nickname = message_info['nickname']
+    active_data = read_json_file(ACTIVE_PATH)
+    if not active_data[str(group_qq)]['observer']:
+        return BOT_NAME + '在此群的旁观者模式已被禁用哦'
+    ob_data: dict = read_json_file(OB_DATA)
+    if str(group_qq) not in ob_data.keys():
+        ob_data.setdefault(str(group_qq), [])
+    ob_list:list = ob_data.get(str(group_qq))
+    message = message.strip()
+    if not message:
+        ob_list.append(QQ) if QQ not in ob_list else None
+        with open(OB_DATA, 'w') as f:
+            dump(ob_data, f)
+        return f'{nickname}已经加到{BOT_NAME}的旁观列表了哦'
+    elif message == 'exit':
+        ob_list.remove(QQ) if QQ in ob_list else None
+        with open(OB_DATA, 'w') as f:
+            dump(ob_data, f)
+        return f'{nickname}已经退出{BOT_NAME}的旁观列表了哦'
+    elif message == 'list' or message == 'show':
+        #ob_data = { k:v for k in ob_list for v in get_nickname(k)}
+        if ob_list is None:
+            return '当前没有任何旁观者哦'
+        send_string = f'当前{BOT_NAME}的旁观列表中有:\n'
+        for qq in ob_list:
+            send_string += f'{get_nickname(qq)}\n({qq})\n'
+        return send_string[:-1]
+    elif message == 'clr' or message == 'clear':
+        ob_data[str(group_qq)].clear()
+        with open(OB_DATA, 'w') as f:
+            dump(ob_data, f)
+        return BOT_NAME + '已成功删除所有旁观者'
+    elif message == 'on':
+        if not active_data[str(group_qq)]['observer']:
+            change_json_file(ACTIVE_PATH, group_qq, 'observer', True)
+            return BOT_NAME + '在此群的旁观者模式成功开启'
+        else:
+            return BOT_NAME + '在此群的旁观者模式未被禁用哦'
+    elif message == 'off':
+        if active_data[str(group_qq)]['observer']:
+            change_json_file(ACTIVE_PATH, group_qq, 'observer', False)
+            return BOT_NAME + '在此群的旁观者模式成功禁用'
+        else:
+            return BOT_NAME + '在此群的旁观者模式未被开启哦'
+    else:
+        return '旁观模式: .ob (exit/list/clr/on/off)\n.ob //加入旁观可以看到他人暗骰结果.ob exit //退出旁观模式\n' \
+               '.ob list //查看群内旁观者\n.ob clr //清除所有旁观者\n.ob on //全群允许旁观模式\n' \
+               '.ob off //禁用旁观模式\n暗骰与旁观仅在群聊中有效'
+
