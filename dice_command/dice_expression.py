@@ -2,7 +2,7 @@ import re
 from random import randint
 
 from bot_command.command import read_json_file, send_private_msg, get_group_name
-from config import DICE_DATA
+from config import DICE_DATA, ACTIVE_PATH, OB_DATA
 
 
 def r_expression(message_info):
@@ -13,27 +13,67 @@ def r_expression(message_info):
     group_qq = message_info['group_qq']
     hide_str = f'惊！{nickname}好像偷偷骰了一颗骰子呢~'
     raw_str = raw_str.upper().replace('X', '*')
-    print(raw_str)
-    #判断是否为直接发送最终点数(s),和暗骰(h)  s,h均为可选参数,s需位于h前
-    if raw_str[0] == 's':
+    print(raw_str, end=' ')
+    illegal_char = re.search('[^0-9DPKBHS#+-/*]', raw_str)
+    #判断是否有掷骰原因，并将原因分离出来
+    if illegal_char:
+        dice_name = '有关 ' + raw_str[illegal_char.start():] + ' 的'
+        raw_str = raw_str[:illegal_char.start()]
+    else:
+        dice_name = ''
+    if not raw_str:
+        set_point = read_json_file(DICE_DATA)[str(QQ)]['set']
+        point = randint(1, set_point)
+        send_string = f'{nickname}掷出了{dice_name}骰子，结果会是怎样呢，真令人期待啊\nD{set_point}={point}'
+        return send_string
+
+    #判断是否为 直接发送最终点数(s) 或暗骰(h) s h均为可选参数 s需位于h前
+    if raw_str[0] == 'S':
         is_skip = True
-        if raw_str[1] == 'h':
-            is_hide = True
-            raw_str = raw_str[2:]
-        else:
-            raw_str = raw_str[1:]
+        try:
+            if raw_str[1] == 'H':
+                is_hide = True
+                raw_str = raw_str[2:]
+            else:
+                raw_str = raw_str[1:]
+                is_hide = False
+        except:
             is_hide = False
-    elif raw_str[0] == 'h':
+            raw_str = raw_str[1:]
+    elif raw_str[0] == 'H':
+        raw_str = raw_str[1:]
         is_hide = True
         is_skip = False
     else:
         is_hide = False
         is_skip = False
-    illegal_char = re.search('[^0-9DPKBHS#+-/*]', raw_str)
-    if illegal_char:
-        dice_name = '有关 ' + raw_str[illegal_char.start():] + ' 的'
+    print(is_hide, is_skip, raw_str)
+    #判断是否允许旁观
+    if message_info['is_group']:
+        active_data = read_json_file(ACTIVE_PATH)
+        is_enable_ob = active_data[str(group_qq)]['observer']
     else:
-        dice_name = ''
+        is_enable_ob = False
+
+    if not raw_str:
+        set_point = read_json_file(DICE_DATA)[str(QQ)]['set']
+        point = randint(1, set_point)
+        send_string = f'{nickname}掷出了{dice_name}骰子，结果会是怎样呢，真令人期待啊\nD{set_point}={point}'
+        if not is_hide:
+            return send_string
+        else:
+            group_name = get_group_name(group_qq)
+            if not group_name:
+                return send_string
+            send_msg = f'在[{group_name}]({group_qq})中{send_string}'
+            if not is_enable_ob:
+                send_private_msg(send_msg, QQ)
+            else:
+                ob_list:list = read_json_file(OB_DATA).get(str(group_qq))
+                ob_list.append(QQ) if QQ not in ob_list else None
+                for QQ in ob_list:
+                    send_private_msg(send_msg, QQ)
+            return hide_str
 
     if raw_str.__contains__('#'):
         #使用相同表达式多次掷骰
@@ -56,8 +96,16 @@ def r_expression(message_info):
                 return send_string[:-1]
             else:
                 group_name = get_group_name(group_qq)
+                if not group_qq:
+                    return send_string[:-1]
                 send_msg = f'在[{group_name}]({group_qq})中{send_string[:-1]}'
-                send_private_msg(send_msg, QQ)
+                if not is_enable_ob:
+                    send_private_msg(send_msg, QQ)
+                else:
+                    ob_list: list = read_json_file(OB_DATA).get(str(group_qq))
+                    ob_list.append(QQ) if QQ not in ob_list else None
+                    for QQ in ob_list:
+                        send_private_msg(send_msg, QQ)
                 return hide_str
         else:
             send_string = nickname + '掷出了' + dice_name + '骰子' + time_str + '次:\n'
@@ -73,8 +121,16 @@ def r_expression(message_info):
                 return send_string[:-1]
             else:
                 group_name = get_group_name(group_qq)
+                if not group_name:
+                    return send_string[:-1]
                 send_msg = f'在[{group_name}]({group_qq})中{send_string[:-1]}'
-                send_private_msg(send_msg, QQ)
+                if not is_enable_ob:
+                    send_private_msg(send_msg, QQ)
+                else:
+                    ob_list: list = read_json_file(OB_DATA).get(str(group_qq))
+                    ob_list.append(QQ) if QQ not in ob_list else None
+                    for QQ in ob_list:
+                        send_private_msg(send_msg, QQ)
                 return hide_str
     else:
         point_express:str = raw_str
@@ -90,35 +146,50 @@ def r_expression(message_info):
             return send_string[:-1]
         else:
             group_name = get_group_name(group_qq)
+            if not group_name:
+                return send_string[:-1]
             send_msg = f'在[{group_name}]({group_qq})中{send_string[:-1]}'
-            send_private_msg(send_msg, QQ)
+            if not is_enable_ob:
+                send_private_msg(send_msg, QQ)
+            else:
+                ob_list:list = read_json_file(OB_DATA).get(str(group_qq))
+                ob_list.append(QQ) if QQ not in ob_list else None
+                for QQ in ob_list:
+                    send_private_msg(send_msg, QQ)
             return hide_str
 
 
 def express(raw_str):
     """有两个返回值，第二个返回值为None时表示主函数r_expression直接return第一个返回值"""
     temp = raw_str
-    pattern = re.compile('(\d{0,2}D\d+)(K{0,1}\d+)')
-    pattern2 = re.compile('(\d{0,2})D(\d{1,3})')
+    pattern = re.compile('(\d{0,2}D\d{0,3})(K{0,1}\d{0,2})')
+    pattern2 = re.compile('(\d{0,2})D(\d{0,3})')
     pattern3 = re.compile('([PB])(\d{0,2})')
     offset = 0
     #对含有D和K的掷骰表达式进行处理
     while re.search(pattern, raw_str[offset:]):
         match = re.search(pattern, raw_str[offset:])
         match2 = re.search(pattern2, match.group(0))
-        times, limit = map(int, match2.groups())
-        times = 1 if not times else times
+        times, limit = match2.groups()
+        limit = 100 if not limit else int(limit)
+        times = 1 if not times else int(times)
         if limit < 0:
             return  '你见过负数面的骰子吗？', None
         elif limit > 100:
             return '你给我找个面数超过100的骰子？', None
-        try:
-            count = int(match.group(2)[1:])
-            if count > 9:
-                return '好多好多骰子啊（晕', None
-            elif count > times:
-                return '骰子数目好像不对吧，您再算算？', None
-        except:
+        k_express = match.group(2)
+        if not k_express:
+            count = -1
+        elif k_express[0] == 'K':
+            try:
+                count = int(match.group(2)[1:])
+                if count > 9:
+                    return '好多好多骰子啊（晕', None
+                elif count > times:
+                    return '骰子数目好像不对吧，您再算算？', None
+            except:
+                count = 1
+        else:
             count = -1
         if times == 1:
             num_str = str(randint(1, int(limit)))
@@ -157,7 +228,7 @@ def express(raw_str):
     exp_string = msg_string = raw_str
     if raw_str.__contains__('P') or raw_str.__contains__('B'):
         msg_offset = exp_offset = 0
-        # 奖惩骰消息的偏移量和算数表达式的偏移量
+        #奖惩骰消息的偏移量和对应算数表达式的偏移量
         while re.search(pattern3, exp_string[exp_offset:]):
             exp_match = re.search(pattern3, exp_string[exp_offset:])
             msg_match = re.search(pattern3, msg_string[msg_offset:])
@@ -202,6 +273,7 @@ def express(raw_str):
             # span获取match的范围，group(0)获得match到的内容
             msg_offset += msg_match.span(0)[1] - len(msg_match.group(0)) + len(msg_str)
             exp_offset += exp_match.span(0)[1] - len(exp_match.group(0)) + len(exp_str)
+    print(raw_str)
     try:
         if raw_str.__contains__('P') or raw_str.__contains__('B'):
             point = round(eval(exp_string))
