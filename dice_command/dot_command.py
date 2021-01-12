@@ -231,3 +231,109 @@ def observer_handle(message_info):
                '.ob list //查看群内旁观者\n.ob clr //清除所有旁观者\n.ob on //全群允许旁观模式\n' \
                '.ob off //禁用旁观模式\n暗骰与旁观仅在群聊中有效'
 
+
+def random_name(message_info):
+    message:str = message_info['message'][5:].strip()
+    nickname = message_info['nickname']
+    send_string = f'emm 让我想想，{nickname}的随即昵称:\n'
+    command_list = message.split()
+    if command_list is None:
+        return send_string + ''.join(get_random_name())
+    elif len(command_list) == 1:
+        if command_list[0] == 'cn':
+            return send_string + ''.join(get_random_name(1, 'cn'))
+        elif command_list[0] == 'en':
+            return send_string + ''.join(get_random_name(1, 'en'))
+        elif command_list[0] == 'enzh':
+            return send_string + ''.join(get_random_name(1, 'enzh'))
+        elif command_list[0] == 'jp':
+            return send_string + ''.join(get_random_name(1, 'jp'))
+        else:
+            try:
+                num = int(command_list[0])
+                if num > 10:
+                    return '请输入1-10直接的数字哦,太多了的话一时想不出来呢'
+                elif num < 1:
+                    return send_string + ''.join(get_random_name())
+                return send_string + '  '.join(get_random_name(num))
+            except:
+                return send_string + ''.join(get_random_name())
+    else:
+        try:
+            type = command_list[0]
+            num = int(command_list[1])
+        except:
+            try:
+                type = command_list[1]
+                num = int(command_list[0])
+            except:
+                return send_string + ''.join(get_random_name())
+        if num > 10:
+            return '请输入1-10直接的数字哦,太多了的话一时想不出来呢'
+        elif num < 1:
+            return send_string + ''.join(get_random_name())
+        if type == 'cn':
+            return send_string + '  '.join(get_random_name(num, 'cn'))
+        elif type == 'en':
+            return send_string + '  '.join(get_random_name(num, 'en'))
+        elif type == 'enzh':
+            return send_string + '  '.join(get_random_name(num, 'enzh'))
+        elif type == 'jp':
+            return send_string + '  '.join(get_random_name(num, 'jp'))
+        else:
+            return send_string + ''.join(get_random_name())
+
+
+def get_random_name(num=1, type='random'):
+    name_list = []
+    name_data:dict = read_json_file(NAME_DATA)
+    if type == 'random':
+        type_list = random.choices(['cn', 'en', 'enzh', 'jp'], k=num)
+        cn_num = type_list.count('cn')
+        en_num = type_list.count('en')
+        enzh_num = type_list.count('enzh')
+        jp_num = type_list.count('jp')
+        if en_num:
+            first_name = random.choices(name_data['first_name_en'], k=en_num)
+            last_name = random.choices(name_data['last_name_en'], k=en_num)
+            for i in range(en_num):
+                name_list.append(first_name[i] + '·' + last_name[i])
+        if cn_num:
+            first_name = random.choices(name_data['first_name_cn'], k=cn_num)
+            single_char = random.choices(name_data['single_char_cn'], k=cn_num * 2)
+            for i in range(cn_num):
+                name_list.append(first_name[i] + ''.join(single_char[i * 2: i * 2 + random.randint(1, 2)]))
+        if enzh_num:
+            first_name = random.choices(name_data['first_name_enzh'], k=enzh_num)
+            last_name = random.choices(name_data['last_name_enzh'], k=enzh_num)
+            for i in range(enzh_num):
+                name_list.append(first_name[i] + '·' + last_name[i])
+        if jp_num:
+            first_name = random.choices(name_data['first_name_jp'], k=jp_num)
+            last_name = random.choices(name_data['last_name_jp'], k=jp_num)
+            for i in range(jp_num):
+                name_list.append(first_name[i] + last_name[i])
+        return  name_list
+    else:
+        if type == 'en':
+            first_name = random.choices(name_data['first_name_en'], k=num)
+            last_name = random.choices(name_data['last_name_en'], k=num)
+            for i in range(num):
+                name_list.append(first_name[i] + '·' + last_name[i])
+        elif type == 'cn':
+            first_name = random.choices(name_data['first_name_cn'], k=num)
+            single_char = random.choices(name_data['single_char_cn'], k=num * 2)
+            print(first_name, single_char)
+            for i in range(num):
+                name_list.append(first_name[i] + ''.join(single_char[i * 2: i * 2 + random.randint(1, 2)]))
+        elif type == 'enzh':
+            first_name = random.choices(name_data['first_name_enzh'], k=num)
+            last_name = random.choices(name_data['last_name_enzh'], k=num)
+            for i in range(num):
+                name_list.append(first_name[i] + '·' + last_name[i])
+        elif type == 'jp':
+            first_name = random.choices(name_data['first_name_jp'], k=num)
+            last_name = random.choices(name_data['last_name_jp'], k=num)
+            for i in range(num):
+                name_list.append(first_name[i] + last_name[i])
+        return name_list
