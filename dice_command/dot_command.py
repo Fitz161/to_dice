@@ -374,3 +374,29 @@ def set_name(message_info):
     with open(DICE_DATA, 'w') as f:
         dump(data, f)
     return send_string + nickname
+
+
+def get_coc_card(num=1):
+    if num > 10 or num < 1:
+        num = 1
+    card_list = []
+    for i in range(num):
+        card = {'力量':get_dice_point(3, 6) * 5, '体质':get_dice_point(3, 6) * 5,
+                '体型':get_dice_point(2, 6) * 5, '敏捷':get_dice_point(3, 6) * 5,
+                '外貌':get_dice_point(3, 6) * 5, '智力':get_dice_point(2, 6) * 5,
+                '意志':get_dice_point(3, 6) * 5, '教育':get_dice_point(3, 6) * 5,
+                '幸运':get_dice_point(3, 6) * 5}
+        sum = 0
+        for point in card.items():
+            sum += point
+        no_luck_sum = sum - card['幸运']
+        card['总计'] = f'{no_luck_sum}/{sum}'
+        card_list.append(card)
+    return card_list
+
+
+def get_dice_point(num=1, scale=100)->int:
+    point = 0
+    for i in range(num):
+        point += random.randint(1, scale)
+    return point
