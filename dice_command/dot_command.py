@@ -337,3 +337,40 @@ def get_random_name(num=1, type='random'):
             for i in range(num):
                 name_list.append(first_name[i] + last_name[i])
         return name_list
+
+
+def set_name(message_info):
+    message: str = message_info['message'][3:]
+    nickname = message_info['nickname']
+    QQ = message_info['sender_qq']
+    data: dict = read_json_file(DICE_DATA)
+    send_string = f'已经将{nickname}更名为:'
+    if not message:
+        data[str(QQ)]['nickname'] = ''
+        with open(DICE_DATA, 'w') as f:
+            dump(data, f)
+        return f'已经将{nickname}这个名字忘掉了哦'
+    #是否设置限定随机昵称
+    elif message[0] == 'n':
+        type = message[1:].strip()
+        if type == 'cn':
+            nickname = ''.join(get_random_name(1, 'cn'))
+            data[str(QQ)]['nickname'] = nickname
+        elif type == 'en':
+            nickname = ''.join(get_random_name(1, 'en'))
+            data[str(QQ)]['nickname'] = nickname
+        elif type == 'enzh':
+            nickname = ''.join(get_random_name(1, 'enzh'))
+            data[str(QQ)]['nickname'] = nickname
+        elif type == 'jp':
+            nickname = ''.join(get_random_name(1, 'jp'))
+            data[str(QQ)]['nickname'] = nickname
+        else:
+            nickname = ''.join(get_random_name())
+            data[str(QQ)]['nickname'] = nickname
+    else:
+        nickname = message.strip()
+        data[str(QQ)]['nickname'] = nickname
+    with open(DICE_DATA, 'w') as f:
+        dump(data, f)
+    return send_string + nickname

@@ -27,6 +27,8 @@ def main_handle(message_info):
             send_string = observer_handle(message_info)
         elif message[:4] == 'name':
             send_string = random_name(message_info)
+        elif message[:2] == 'nn':
+            send_string = set_name(message_info)
         elif message[:4] == 'send':
             send_string = dot_send_msg(message_info)
         elif message[:6] == 'phasor':
