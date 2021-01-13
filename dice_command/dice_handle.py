@@ -8,15 +8,24 @@ from bot_command.command import send_private_msg, send_public_msg, send_long_msg
 
 def main_handle(message_info):
     try:
-        send_string = '程序猿正在爆肝开发中'
         message = message_info['message'][1:]
         group_qq = message_info['group_qq']
         QQ = message_info['sender_qq']
         nickname = message_info['nickname']
         if message[:3] == 'set':
             send_string = set_handle(message_info)
+        elif message[:3] == 'coc':
+            send_string = f'{nickname}的调查员作成:'
+            trans_tab = str.maketrans('', '', " '{}")
+            try:
+                cards = get_coc_card(int(message[3:]))
+                for card in cards:
+                    send_string += str(card).translate(trans_tab) + '\n'
+                send_string = send_string[:-1]
+            except:
+                send_string += str(get_coc_card()[0]).translate(trans_tab)
         elif message[:5] == 'rules':
-            pass
+            send_string = '程序猿正在爆肝开发中'
         elif message[:1] == 'r':
             send_string = r_expression(message_info)
         elif message[:4] == 'help':
