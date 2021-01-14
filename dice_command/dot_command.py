@@ -1,9 +1,12 @@
+import re
+
 import requests
 from json import dump
 import random
 
-from config import apiBaseUrl, apiGroupInfo, LANGUAGE_DICT, DICE_DATA, OB_DATA, BOT_NAME, ACTIVE_PATH, NAME_DATA
+from config import apiBaseUrl, apiGroupInfo, LANGUAGE_DICT, DICE_DATA, OB_DATA, BOT_NAME, ACTIVE_PATH, NAME_DATA, DICE_SYNONYMS
 from bot_command.command import change_json_file, read_json_file, get_nickname
+from dice_command.dice_expression import express
 
 
 def dot_send_msg(message_info:dict):
@@ -387,7 +390,7 @@ def get_coc_card(num=1):
                 '意志':get_dice_point(3, 6) * 5, '教育':get_dice_point(3, 6) * 5,
                 '幸运':get_dice_point(3, 6) * 5}
         sum = 0
-        for point in card.items():
+        for point in card.values():
             sum += point
         no_luck_sum = sum - card['幸运']
         card['总计'] = f'{no_luck_sum}/{sum}'
@@ -400,3 +403,75 @@ def get_dice_point(num=1, scale=100)->int:
     for i in range(num):
         point += random.randint(1, scale)
     return point
+
+
+def st_handle(message_info):
+    message: str = message_info['message'][3:].strip()
+    nickname = message_info['nickname']
+    QQ = message_info['sender_qq']
+    data: dict = read_json_file(DICE_DATA)
+    card:dict = data[str(QQ)]['card']['default']
+    print(message)
+    if message == 'clr' or message == 'clear':
+        data[str(QQ)]['card']['default'] = {}
+        with open(DICE_DATA, 'w') as f:
+            dump(data, f)
+        return f'已删除{nickname}当前角色卡的所有属性'
+    elif message[:4] == 'show':
+        if message == 'show':
+            trans_tab = str.maketrans('', '', " '{}")
+            return nickname + '的角色卡属性为\n' + str(card).translate(trans_tab)
+        else:
+            property = message[4:].strip()
+            if property in card.keys():
+                return  f'{nickname}的{property}属性为{card[property]}'
+            elif property.upper() in DICE_SYNONYMS.keys() and card.get(DICE_SYNONYMS[property.upper()]):
+                return f'{nickname}的{property}属性为{card[DICE_SYNONYMS[property.upper()]]}'
+            else:
+                return '属性不存在'
+    elif message[:3] == 'del':
+        if message == 'del':
+            return '请输入要删除的属性哦'
+        else:
+            property = message[3:].strip()
+            if property in card.keys():
+                #使用del关键字直接删除字典中的键值对
+                del data[str(QQ)]['card']['default']
+                with open(DICE_DATA, 'w') as f:
+                    dump(data ,f)
+                return f'已删除{nickname}的{property}属性'
+            elif property.upper() in DICE_SYNONYMS.keys() and card.get(DICE_SYNONYMS[property.upper()]):
+                del data[str(QQ)]['card']['default'][DICE_SYNONYMS[property.upper()]]
+                with open(DICE_DATA, 'w') as f:
+                    dump(data, f)
+                return f'已删除{nickname}的{DICE_SYNONYMS[property.upper()]}({property})属性'
+            else:
+                '属性不存在'
+    else:
+        if message.__contains__(':'):
+            items = message.split()
+            for item in items:
+                try:
+                    property, point = item.split(':')
+                    if property == '总计':
+                        continue
+                    if property in card.keys():
+                        card[property] = int(point)
+                    elif property.upper() in DICE_SYNONYMS.keys() and card.get(DICE_SYNONYMS[property.upper()]):
+                        card[DICE_SYNONYMS[property.upper()]] = int(point)
+                    else:
+                        card[property] = int(point)
+                except:
+                    pass
+            with open(DICE_DATA, 'w') as f:
+                dump(data, f)
+            return '已经添加好属性了哦'
+        else:
+            return '正在开发中'
+            pattern = re.compile('([^0-9*/+-])([+*/-]?)(\d+)')
+            offset = 0
+            while re.search(pattern, message[offset:]):
+                match = re.search(pattern, message[offset:])
+                property, operator, point = match.groups()
+                offset += match.span(0)[1] - len(match.group(0))
+
