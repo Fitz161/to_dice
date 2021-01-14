@@ -16,7 +16,7 @@ def main_handle(message_info):
             send_string = set_handle(message_info)
         elif message[:3] == 'coc':
             send_string = f'{nickname}的调查员作成:'
-            trans_tab = str.maketrans('', '', " '{}")
+            trans_tab = str.maketrans(',', ' ', " '{}")
             try:
                 cards = get_coc_card(int(message[3:]))
                 for card in cards:
@@ -28,6 +28,8 @@ def main_handle(message_info):
             send_string = '程序猿正在爆肝开发中'
         elif message[:1] == 'r':
             send_string = r_expression(message_info)
+        elif message[:2] == 'st':
+            send_string =st_handle(message_info)
         elif message[:4] == 'help':
             send_string = show_command_doc(message_info)
         elif message == 'jrrp':
