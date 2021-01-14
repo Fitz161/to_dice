@@ -321,7 +321,7 @@ def show_command(message_info: dict):
 
 def learn_response(message_info: dict):
     message = message_info['message']
-    with open("/bot/learn.json") as f:
+    with open(LEARN_PATH) as f:
         total_dict:dict = load(f)
     send_string = total_dict.get(message)
     if not send_string:
