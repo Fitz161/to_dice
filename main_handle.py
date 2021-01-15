@@ -183,3 +183,27 @@ def is_at_bot(message_info)->bool:
         return True if active_dict[str(message_info['group_qq'])]['listen_at'] else False
     else:
         return False
+
+
+def backup_files():
+    path = BOT_PATH + '/data/data/'
+    dice_path = BOT_PATH + '/data/dice_data/'
+    backup_path = BOT_PATH + '/data/backup_data/'
+    dice_backup = BOT_PATH + '/data/dice_backup/'
+    date = strftime("%Y_%m_%d", localtime()) + '/'
+    os.mkdir(backup_path + date)
+    os.mkdir(dice_backup + date)
+    file_names = list(os.walk(path))[0][2]
+    for file_name in file_names:
+        with open(path + file_name) as f:
+            with open(backup_path + date + file_name, 'w') as fp:
+                fp.write(f.read())
+    send_private_msg(f'昨日BOT数据已备份到 {backup_path + date} 文件夹下', ADMIN_LIST[0])
+    file_names = list(os.walk(dice_path))[0][2]
+    for file_name in file_names:
+        with open(dice_path + file_name) as f:
+            with open(dice_backup + date + file_name, 'w') as fp:
+                fp.write(f.read())
+    send_private_msg(f'昨日DICE数据已备份到 {dice_backup + date} 文件夹下', ADMIN_LIST[0])
+
+
