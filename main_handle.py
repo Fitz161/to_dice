@@ -1,9 +1,9 @@
 from queue import Queue
 from datetime import datetime
 
-from command import event_handle
-from command.admin_command import *
-from command.command import *
+from bot_command import event_handle
+from bot_command.admin_command import *
+from bot_command.command import *
 from config import MULTI_THREADING
 
 
@@ -13,15 +13,17 @@ def get_message(message_queue: Queue):
         print(strftime("%Y-%m-%d %H:%M:%S", localtime()), end=' ')
         print('收到 ', message_info.get('sender_qq'), '消息:', message_info.get('message'))
         black_list, is_active = get_black_active(message_info)
-        if message_info['message'] == '/bot on':
-            set_active(message_info, True)
-        elif message_info['is_at_bot']:
-            #bot被at后始终会响应命令，不受/bot off限制
-            message_info['message'] = message_info['message'][11 + len(str(message_info['bot_qq']))]
-            if message_info['message'] == '/bot on':
-                set_active(message_info, True)
+        #私聊消息is_active会返回None
+        if message_info['is_at_bot']:
+            #bot被at后始终会响应命令，不受/bot off限制，会受listen_at群属性限制
+            message_info['message'] = message_info['message'][11 + len(str(message_info['bot_qq'])):].strip()
+            if message_info['message'][1:] == 'bot on':
+                bot_on(message_info, is_active)
             return message_info
-        if message_info['group_qq'] in black_list or message_info['sender_qq'] in black_list or not is_active:
+        elif message_info['message'][1:] == 'bot on':
+            bot_on(message_info, is_active)
+            return None
+        if message_info['group_qq'] in black_list or message_info['sender_qq'] in black_list or is_active == False:
             return None
         #通知消息处理
         elif not message_info['is_notice'] and not message_info['is_anonymous'] and not message_info['is_request']:
@@ -94,11 +96,11 @@ def handle_message(message_queue: Queue):
                     learn_response(message_info)
                 else:
                     if message[:2] in command_dict.keys():
-                        threading.Thread(target=command_dict.get(message[:2]), args=(message_info,)).start()
+                        threading.Thread(target=command_dict.get(message[:2]), args=(message_info,), daemon=True).start()
                     elif message[:3] in command_dict.keys():
-                        threading.Thread(target=command_dict.get(message[:3]), args=(message_info,)).start()
+                        threading.Thread(target=command_dict.get(message[:3]), args=(message_info,), daemon=True).start()
                     elif message[0] in command_dict.keys():
-                        threading.Thread(target=command_dict.get(message[0]), args=(message_info,)).start()
+                        threading.Thread(target=command_dict.get(message[0]), args=(message_info,), daemon=True).start()
                     elif message[:3] in admin_command_dict.keys() and message_info['sender_qq'] in ADMIN_LIST:
                         threading.Thread(target=admin_command_dict.get(message[:3]), args=(message_info,)).start()
                     learn_response(message_info)
@@ -116,16 +118,7 @@ def timing_task():
                 send_message = data.get(str(randint(1, len(data))))
             for group_qq in read_json_file(DATA_PATH)['send_list']:
                 send_public_msg(send_message, group_qq)
-            path = BOT_PATH + '/data/data/'
-            backup_path = BOT_PATH + '/data/backup_data/'
-            date = strftime("%Y_%m_%d", localtime()) + '/'
-            os.mkdir(backup_path + date)
-            file_names = list(os.walk(path))[0][2]
-            for file_name in file_names:
-                with open(path + file_name) as f:
-                    with open(backup_path + date + file_name, 'w') as fp:
-                        fp.write(f.read())
-            send_private_msg(f'昨日数据已备份到 {backup_path + date} 文件夹下', ADMIN_LIST[0])
+            backup_files()
             sleep(25000)
         elif now.hour == 7 and now.minute == 0 and now.second == 0:
             with open(PATTERN_PATH) as f:
@@ -146,38 +139,47 @@ def get_black_active(message_info):
     with open(ACTIVE_PATH) as f:
         active_dict:dict = load(f)
     if str(group_qq) not in active_dict.keys():
-        active_dict[str(group_qq)] = True
-    is_active = active_dict.get(str(group_qq))
+        active_dict.setdefault(str(group_qq), {'active': True, 'observer': True, 'entertain_mode': True,
+                                               'jrrp': True, 'welcome': True, 'listen_at': True,
+                                               'deck': True, 'draw': True, 'debug': True, 'log' : False})
+    is_active = active_dict[str(group_qq)]['active']
     with open(ACTIVE_PATH, 'w') as f:
         dump(active_dict, f)
     return black_list, is_active
 
 
 def set_active(message_info, b:bool):
+    """初始化群设置"""
     if not message_info['is_group']:
         return
-    group_qq = message_info['group_qq']
-    QQ = message_info['sender_qq']
-    from command.event_handle import get_group_admin
-    if QQ not in get_group_admin(message_info):
+    from bot_command.event_handle import get_group_admin
+    if message_info['sender_qq'] not in get_group_admin(message_info):
         return
     with open(ACTIVE_PATH) as f:
         active_dict: dict = load(f)
+    group_qq = message_info['group_qq']
     if str(group_qq) not in active_dict.keys():
-        active_dict[str(group_qq)] = True
-    active_dict[str(group_qq)] = b
+        active_dict.setdefault(str(group_qq), {'active': True, 'observer': True, 'entertain_mode' : True,
+                                               'jrrp': True, 'welcome' : True, 'listen_at' : True,
+                                               'deck' : True, 'draw' : True, 'debug' : True})
+    active_dict[str(group_qq)]['active'] = b
     with open(ACTIVE_PATH, 'w') as f:
         dump(active_dict, f)
 
 
 def is_at_bot(message_info)->bool:
-    """判断bot是否被at"""
-    index = message_info['message'].find(']')
+    """判断是否处理at命令 以及bot是否被at"""
+    message = message_info['message']
+    if not message:
+        return False
+    index = message.find(']')
     if not index == -1:
         cq_msg = message_info['message'][:index+1]
     else:
         cq_msg = 0
     if cq_msg == f'[CQ:at,qq={message_info["bot_qq"]}]':
-        return True
+        with open(ACTIVE_PATH) as f:
+            active_dict: dict = load(f)
+        return True if active_dict[str(message_info['group_qq'])]['listen_at'] else False
     else:
         return False
