@@ -66,6 +66,7 @@ def extract_message(message: dict):
     message_info['sub_type'] = message.get('sub_type')
     message_info['raw_message'] = message.get('raw_message')
     message_info['bot_qq'] = message.get('self_id')
+    message_info['nickname'] = get_nickname(message)
     message_info['is_at_bot'] = True if is_at_bot(message_info) else False
     message_info['is_group_increase'] = True if notice_type == 'group_increase' else False
     message_info['is_group_kick'] = True if notice_type == 'group_decrease' \
@@ -183,6 +184,28 @@ def is_at_bot(message_info)->bool:
         return True if active_dict[str(message_info['group_qq'])]['listen_at'] else False
     else:
         return False
+
+
+def get_nickname(message):
+    #group_qq = message.get('group_id')
+    QQ = message.get('user_id')
+    data:dict = read_json_file(DICE_DATA)
+    if str(QQ) not in data.keys():
+        data.setdefault(str(QQ), {'nickname' : '', 'set' : 100, 'card' : {'default' : {}},
+                                  'current_card' : 'default', 'favorability' : 0})
+    nickname:str = data[str(QQ)]['nickname']
+    if not nickname:
+        if not message.get('sender'):
+            return
+        if message.get('message_type') == 'group':
+            card = message['sender']['card']
+        else:
+            card = None
+        nickname = card if card else message['sender']['nickname']
+        data[str(QQ)]['nickname'] = nickname
+    with open(DICE_DATA, 'w') as f:
+        dump(data, f)
+    return nickname
 
 
 def backup_files():
