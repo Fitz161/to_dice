@@ -13,6 +13,7 @@ def get_message(message_queue: Queue):
         print(strftime("%Y-%m-%d %H:%M:%S", localtime()), end=' ')
         print('收到 ', message_info.get('sender_qq'), '消息:', message_info.get('message'))
         black_list, is_active = get_black_active(message_info)
+        threading.Thread(target=log_handle, args=(message_info,), daemon=True).start()
         #私聊消息is_active会返回None
         if message_info['is_at_bot']:
             #bot被at后始终会响应命令，不受/bot off限制，会受listen_at群属性限制
@@ -230,3 +231,62 @@ def backup_files():
     send_private_msg(f'昨日DICE数据已备份到 {dice_backup + date} 文件夹下', ADMIN_LIST[0])
 
 
+def log_handle(message_info):
+    """判断群是否开启了日志并进行记录，结束后将日志文件上传到服务器上"""
+    message: str = message_info['message']
+    group_qq = message_info['group_qq']
+    is_log = read_json_file(ACTIVE_PATH)[str(group_qq)]['log'] if message_info['is_group'] else False
+    print(message, is_log)
+    if message_info['is_at_bot']:
+        message = message[11 + len(str(message_info['bot_qq'])):].strip()
+    print(message)
+    if not message_info['is_group'] and message[1:4] == 'log':
+        send_private_msg('日志记录只能用于群聊中哦', message_info['sender_qq'])
+        return
+    message = message[1:]
+    if not message[:3] == 'log' and not is_log:
+        return
+    path = BOT_PATH + '/data/log_data/'
+    log_path = f'{path}{group_qq}.txt'
+    command = message[3:].strip()
+    if message[:3] == 'log' and not command:
+        send_string = '跑团日志记录\n.log new //新建日志并开始记录\n.log on //开始记录\n.log off //暂停记录\n' \
+                      '.log end //完成记录并发送日志文件'
+    elif message[:3] == 'log' and command == 'on':
+        if is_log:
+            send_string = BOT_NAME + '正在记录中哦'
+        else:
+            change_json_file(ACTIVE_PATH, group_qq, 'log', True)
+            send_string = BOT_NAME + '开始记录日志，可使用.log off暂停记录'
+    elif message[:3] == 'log' and command == 'off':
+        if not is_log:
+            send_string = BOT_NAME + '日志记录已经暂停了'
+        else:
+            change_json_file(ACTIVE_PATH, group_qq, 'log', False)
+            send_string = BOT_NAME + '暂停记录日志，可使用.log off恢复记录'
+    elif message[:3] == 'log' and command == 'end':
+        if os.path.exists(log_path):
+            log_name = str(group_qq) +strftime("_%Y_%m_%d_%H_%M_%S", localtime())
+            from shutil import copyfile
+            copyfile(log_path, f'/var/www/html/{log_name}.txt')
+            send_string = f'{BOT_NAME}已完成日志记录并上传到{SERVER_IP}:80/{log_name}.txt，可直接点击链接下载'
+            os.remove(log_path)
+            change_json_file(ACTIVE_PATH, group_qq, 'log', False)
+        else:
+            send_string = '请先使用.log new创建新的日志'
+    elif message[:3] == 'log' and command == 'new':
+        change_json_file(ACTIVE_PATH, group_qq, 'log', True)
+        with open(log_path, 'w') as f:
+            f.write('新日志记录开始\n\n')
+        send_string = BOT_NAME + '已开始记录日志,使用.log end可结束日志记录'
+    elif is_log:
+        time = strftime("%Y-%m-%d %H:%M:%S", localtime())
+        nickname = message_info['nickname']
+        QQ = message_info['sender_qq']
+        with open(log_path, 'a+') as f:
+            f.write(f'{nickname}({QQ}) {time}\n{message_info["message"]}\n\n')
+        send_string = None
+    else:
+        send_string = None
+    if send_string:
+        send_public_msg(send_string, group_qq)
