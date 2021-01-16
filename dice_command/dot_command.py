@@ -625,3 +625,88 @@ def st_handle(message_info):
                 property, operator, point = match.groups()
                 offset += match.span(0)[1] - len(match.group(0))
 
+
+def point_check(property_point, point, rule_num):
+    """判断大成功或大失败"""
+    if property_point >= point:
+        return_str = '成功'
+    else:
+        return_str =  '失败'
+    if rule_num == 0:
+        if property_point < 50:
+            if point >= 96 and point <= 100:
+                return '大失败'
+            elif point == 1:
+                return '大成功'
+            else:
+                return return_str
+        else:
+            if point == 100:
+                return '大失败'
+            elif point == 1:
+                return '大成功'
+            else:
+                return return_str
+    elif rule_num == 1:
+        if property_point < 50:
+            if point >= 96 and point <= 100:
+                return '大失败'
+            elif point == 1:
+                return '大成功'
+            else:
+                return return_str
+        else:
+            if point == 100:
+                return '大失败'
+            elif point >= 1 and point <= 5:
+                return '大成功'
+            else:
+                return return_str
+    elif rule_num == 2:
+        if point >= 96 and point <= 99:
+            return '大失败' if return_str == '失败' else '成功'
+        elif point == 100:
+            return '大失败'
+        elif point >= 1 and point <= 5:
+            return '大成功' if return_str == '成功' else '失败'
+        else:
+            return return_str
+    elif rule_num == 3:
+        if point >= 96 and point <= 100:
+            return '大失败'
+        elif point >= 1 and point <= 5:
+            return '大成功'
+        else:
+            return return_str
+    elif rule_num == 4:
+        if point >= 1 and point <= 5:
+            if point <= property_point / 10:
+                return '大成功'
+            else:
+                return return_str
+        elif property_point >= 50:
+            if point == 100:
+                return '大失败'
+            else:
+                return return_str
+        else:
+            if point >= 96 + property_point / 10:
+                return '大失败'
+            else:
+                return return_str
+    elif rule_num == 5:
+        if point == 1 or point ==2:
+            if point < property_point / 5:
+                return '大成功'
+            else:
+                return return_str
+        elif property_point >= 50:
+            if point == 99 or point == 100:
+                return '大失败'
+            else:
+                return return_str
+        else:
+            if point >= 96 and point <= 100:
+                return '大失败'
+            else:
+                return return_str
