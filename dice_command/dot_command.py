@@ -4,7 +4,7 @@ import requests
 from json import dump
 import random
 
-from config import apiBaseUrl, apiGroupInfo, LANGUAGE_DICT, DICE_DATA, OB_DATA, BOT_NAME, ACTIVE_PATH, NAME_DATA, DICE_SYNONYMS
+from config import *
 from bot_command.command import change_json_file, read_json_file, get_nickname
 from dice_command.dice_expression import express
 
@@ -156,17 +156,35 @@ def set_handle(message_info):
     group_qq = message_info['group_qq']
     nickname = message_info['nickname']
     raw_str:str = message_info['message'][4:]
-    if not raw_str:
+    if not raw_str.strip():
         change_json_file(DICE_DATA, qq, 'set', 100)
         return f'已将{nickname}的默认骰类型更改为D100'
-    if raw_str[:6] == 'setcoc':
+    if raw_str[:6] == 'coc':
         try:
             set_point = int(raw_str.strip())
             if set_point < 0 or set_point > 5:
                 set_point = 0
         except:
             set_point = 0
-        return
+        data:dict = read_json_file(DATA_PATH)
+        data['setcoc'][str(group_qq)] = set_point
+        with open(DATA_PATH, 'w') as f:
+            f.write(data)
+        if set_point == 0:
+            return '默认检定房规已设置：' + str(set_point) + '\n出1大成功\n不满50出96-100大失败，满50出100大失败'
+        elif set_point == 1:
+            return '默认检定房规已设置：' + str(set_point) + '不满50出1大成功，满50出1-5大成功\n' \
+                                                   '不满50出96-100大失败，满50出100大失败'
+        elif set_point == 2:
+            return '默认检定房规已设置：' + str(set_point) + '\n出1-5且<=成功率大成功\n出100或出96-99且>成功率大失败'
+        elif set_point == 3:
+            return '默认检定房规已设置：' + str(set_point) + '\n出1-5大成功\n出96-100大失败'
+        elif set_point == 4:
+            return '默认检定房规已设置：' + str(set_point) + '\n出1-5且<=成功率/10大成功\n' \
+                                                   '不满50出>=96+成功率/10大失败，满50出100大失败'
+        elif set_point == 5:
+            return '默认检定房规已设置：' + str(set_point) + '\n出1-2且<成功率/5大成功\n' \
+                                                   '不满50出96-100大失败，满50出99-100大失败'
     else:
         try:
             set_point = int(raw_str.strip())
