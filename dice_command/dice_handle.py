@@ -24,6 +24,8 @@ def main_handle(message_info):
                 send_string = send_string[:-1]
             except:
                 send_string += str(get_coc_card()[0]).translate(trans_tab)
+        elif message[:2] == 'rc' or message[:2] == 'ra':
+            send_string = random_check(message_info)
         elif message[:5] == 'rules':
             send_string = '程序猿正在爆肝开发中'
         elif message[:1] == 'r':
@@ -64,6 +66,7 @@ def main_handle(message_info):
             else:
                 from main_handle import set_active
                 set_active(message_info, False)
+                send_public_msg(BOT_NAME + '已经去休息了哦', group_qq)
     except:
         #将报错信息发给管理员
         send_private_msg(message_info['message'] + '\n' + traceback.format_exc(), ADMIN_LIST[1])
