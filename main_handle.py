@@ -113,6 +113,10 @@ def handle_message(message_queue: Queue):
 def timing_task():
     while True:
         now = datetime.now()
+        if now.minute == 0 and now.second == 0:
+            if bot_status() == "bot已下线\n":
+                send_private_msg('go-cqhttp已下线', ADMIN_LIST[0])
+                break
         if now.hour == 0 and now.minute == 0 and now.second == 0:
             admin_command_dict.get('重置')(0)
             with open(PATTERN_PATH) as f:
@@ -121,14 +125,12 @@ def timing_task():
             for group_qq in read_json_file(DATA_PATH)['send_list']:
                 send_public_msg(send_message, group_qq)
             backup_files()
-            sleep(25000)
         elif now.hour == 7 and now.minute == 0 and now.second == 0:
             with open(PATTERN_PATH) as f:
                 data:dict = load(f)['morning']
                 send_message = data.get(str(randint(1, len(data))))
             for group_qq in read_json_file(DATA_PATH)['send_list']:
                 send_public_msg(send_message, group_qq)
-            sleep(61000)
         sleep(1)
 
 
