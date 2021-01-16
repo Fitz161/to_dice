@@ -423,6 +423,138 @@ def get_dice_point(num=1, scale=100)->int:
     return point
 
 
+def random_check(message_info):
+    message: str = message_info['message'][3:].strip()
+    if not message:
+        return '用法：.ra/rc ([检定轮数]#)[属性名] ([成功率])\n//角色卡设置了属性时，可省略成功率'
+    nickname = message_info['nickname']
+    QQ = message_info['sender_qq']
+    group_qq = message_info['group_qq']
+    pattern = re.compile('([^0-9+*/-]+)([-+*/]?)(\d*)')
+    data: dict = read_json_file(DICE_DATA)
+    card: dict = data[str(QQ)]['card']['default']
+    set = read_json_file(DICE_DATA)[str(QQ)]['set']     #默认骰面数
+    data: dict = read_json_file(DATA_PATH)
+    try:
+        set_coc = data['setcoc'][str(group_qq)]         #房规
+    except:
+        set_coc = 0
+    if message[:2] == '困难':
+        match = re.search(pattern, message[2:])
+        # 判断是否有掷骰原因，并将原因分离出来
+        if message[match.end():]:
+            dice_name = '由于 ' + message[match.end():]
+        else:
+            dice_name = ''
+        property, operator, point = map(str.strip, match.groups())
+        if property in card.keys():
+            point = card[property] if not point else point
+        elif property.upper() in DICE_SYNONYMS.keys() and card.get(DICE_SYNONYMS[property.upper()]):
+            point = card[DICE_SYNONYMS[property.upper()]] if not point else point
+        else:
+            if not point:
+                return f'未设定{property}成功率，请先.st {property} 技能值 或查看.help rc'
+        check_point = round(point / 2)
+        point = random.randint(1, set)
+        result = point_check(check_point, point, set_coc)
+        if result == '成功':
+            return f'{dice_name}{nickname}进行{property}检定: D{set}={point}/' \
+                   f'{check_point} {result} 成功了呢，真不错呢'
+        elif result == '大成功':
+            return f'{dice_name}{nickname}进行{property}检定: D{set}={point}/' \
+                   f'{check_point} {result} 竟然成功了，创造出奇迹了呢'
+        elif result == '失败':
+            return f'{dice_name}{nickname}进行{property}检定: D{set}={point}/' \
+                   f'{check_point} {result} 失败了呢，真是遗憾呀'
+        elif result == '大成功':
+            return f'{dice_name}{nickname}进行{property}检定: D{set}={point}/' \
+                   f'{check_point} {result} 啊，大失败，看来这次没有神明眷顾呢'
+    elif message[:2] == '极难':
+        match = re.search(pattern, message[2:])
+        property, operator, point = map(str.strip, match.groups())
+        # 判断是否有掷骰原因，并将原因分离出来
+        if message[match.end():]:
+            dice_name = '由于 ' + message[match.end():]
+        else:
+            dice_name = ''
+        if property in card.keys():
+            point = card[property] if not point else point
+        elif property.upper() in DICE_SYNONYMS.keys() and card.get(DICE_SYNONYMS[property.upper()]):
+            point = card[DICE_SYNONYMS[property.upper()]] if not point else point
+        else:
+            if not point:
+                return f'未设定{property}成功率，请先.st {property} 技能值 或查看.help rc'
+        check_point = round(point / 10)
+        point = random.randint(1, set)
+        result = point_check(check_point, point, set_coc)
+        if result == '成功':
+            return f'{dice_name}{nickname}进行{property}检定: D{set}={point}/' \
+                   f'{check_point} {result} 成功了呢，真不错呢'
+        elif result == '大成功':
+            return f'{dice_name}{nickname}进行{property}检定: D{set}={point}/' \
+                   f'{check_point} {result} 竟然成功了，创造出奇迹了呢'
+        elif result == '失败':
+            return f'{dice_name}{nickname}进行{property}检定: D{set}={point}/' \
+                   f'{check_point} {result} 失败了呢，真是遗憾呀'
+        elif result == '大成功':
+            return f'{dice_name}{nickname}进行{property}检定: D{set}={point}/' \
+                   f'{check_point} {result} 啊，大失败，看来这次没有神明眷顾呢'
+    elif not message.__contains__('#'):
+        match = re.search(pattern, message)
+        property, operator, point = map(str.strip, match.groups())
+        # 判断是否有掷骰原因，并将原因分离出来
+        oper_num = point
+        if message[match.end():]:
+            dice_name = '由于 ' + message[match.end():]
+        else:
+            dice_name = ''
+        if property in card.keys():
+            point = card[property]
+        elif property.upper() in DICE_SYNONYMS.keys() and card.get(DICE_SYNONYMS[property.upper()]):
+            point = card[DICE_SYNONYMS[property.upper()]]
+        else:
+            #不存在该属性时才会进入
+            if operator and point:
+            #只有运算符和操作数，没有属性值
+                return f'未设定{property}成功率，请先.st {property} 技能值 或查看.help rc'
+            elif not operator and not point:
+            #无需运算
+                return f'未设定{property}成功率，请先.st {property} 技能值 或查看.help rc'
+            elif operator and not point:
+            #只有操作数，此时将操作数看作检定原因
+                dice_name = operator + dice_name
+            else:
+            #此时通过参数形式指定了成功率
+                pass
+        try:
+            if operator == '+':
+                check_point = int(point) + int(oper_num)
+            elif operator == '-':
+                check_point = int(point) - int(oper_num)
+            elif operator == '*':
+                check_point = int(point) * int(oper_num)
+            elif operator == '/':
+                check_point = round(int(point) / int(oper_num))
+            else:
+                check_point = point
+        except:
+            return '操作数和操作符间不能有空格'
+        point = random.randint(1, set)
+        result = point_check(check_point, point, set_coc)
+        if result == '成功':
+            return f'{dice_name}{nickname}进行{property}{operator}{oper_num}检定: D{set}={point}/' \
+                   f'{check_point} {result} 成功了，真不错呢'
+        elif result == '大成功':
+            return f'{dice_name}{nickname}进行{property}{operator}{oper_num}检定: D{set}={point}/' \
+                   f'{check_point} {result} 竟然成功了，创造出奇迹了呢'
+        elif result == '失败':
+            return f'{dice_name}{nickname}进行{property}{operator}{oper_num}检定: D{set}={point}/' \
+                   f'{check_point} {result} 失败了呢，真是遗憾呀'
+        elif result == '大成功':
+            return f'{dice_name}{nickname}进行{property}{operator}{oper_num}检定: D{set}={point}/' \
+                   f'{check_point} {result} 啊，大失败，看来这次没有神明眷顾呢'
+
+
 def st_handle(message_info):
     message: str = message_info['message'][3:].strip()
     nickname = message_info['nickname']
