@@ -21,6 +21,8 @@ def get_message(message_queue: Queue):
             if message_info['message'][1:] == 'bot on':
                 bot_on(message_info, is_active)
             return message_info
+        elif not message_info['message']:
+            return
         elif message_info['message'][1:] == 'bot on':
             bot_on(message_info, is_active)
             return None
@@ -238,13 +240,17 @@ def log_handle(message_info):
     message: str = message_info['message']
     group_qq = message_info['group_qq']
     is_log = read_json_file(ACTIVE_PATH)[str(group_qq)]['log'] if message_info['is_group'] else False
-    print(message, is_log)
+    if is_log:
+        print('logging', message[:20])
     if message_info['is_at_bot']:
         message = message[11 + len(str(message_info['bot_qq'])):].strip()
-    print(message)
-    if not message_info['is_group'] and message[1:4] == 'log':
-        send_private_msg('日志记录只能用于群聊中哦', message_info['sender_qq'])
-        return
+    if not message_info['is_group']:
+        try:
+            if message[1:4] == 'log':
+                send_private_msg('日志记录只能用于群聊中哦', message_info['sender_qq'])
+                return
+        except:
+            return
     message = message[1:]
     if not message[:3] == 'log' and not is_log:
         return
