@@ -163,9 +163,11 @@ def black_list(message_info):
 
 def bot_on(message_info, is_active):
     from config import BOT_NAME
-    if not is_active:
+    from main_handle import set_active
+    if is_active:
         send_string = BOT_NAME + '可没有在偷懒哦'
     else:
+        set_active(message_info, True)
         send_string = BOT_NAME + '已经开始工作了哦'
     if message_info['is_private']:
         send_private_msg(send_string, message_info['sender_qq'])
