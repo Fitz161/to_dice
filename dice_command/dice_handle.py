@@ -24,6 +24,8 @@ def main_handle(message_info):
                 send_string = send_string[:-1]
             except:
                 send_string += str(get_coc_card()[0]).translate(trans_tab)
+        elif message[:2] == 'dk':
+            send_string = sign_in(message_info)
         elif message[:2] == 'rc' or message[:2] == 'ra':
             send_string = random_check(message_info)
         elif message[:5] == 'rules':
@@ -48,25 +50,24 @@ def main_handle(message_info):
             send_string = calculate_phasor(message_info)
         else:
             send_string = None
+        #只有群消息才会触发的命令
+        if message_info['is_group']:
+            from bot_command.event_handle import get_group_admin, leave_group
+            if message == 'leave' or message == 'dismiss':
+                if QQ in get_group_admin(message_info):
+                    leave_group(message_info)
+                else:
+                    send_string = '请让管理员发送该命令'
+            elif message == 'bot off':
+                if not message_info['sender_qq'] in get_group_admin(message_info):
+                    send_string = BOT_NAME + '只聆听管理员的召唤哦'
+                else:
+                    from main_handle import set_active
+                    set_active(message_info, False)
+                    send_string = BOT_NAME + '已经去休息了哦'
         if not send_string:
             return
         send_long_msg(message_info, send_string)
-        #只有群消息才会触发的命令
-        if not message_info['is_group']:
-            return
-        from bot_command.event_handle import get_group_admin, leave_group
-        if message[1:] == 'leave' or message[1:] == 'dismiss':
-            if QQ in get_group_admin(message_info):
-                leave_group(message_info)
-            else:
-                send_public_msg('请让管理员发送该命令', group_qq)
-        elif message[1:] == 'bot off':
-            if not message_info['sender_qq'] in get_group_admin(message_info):
-                send_public_msg(BOT_NAME + '只聆听管理员的召唤哦', group_qq)
-            else:
-                from main_handle import set_active
-                set_active(message_info, False)
-                send_public_msg(BOT_NAME + '已经去休息了哦', group_qq)
     except:
         #将报错信息发给管理员
         send_private_msg(message_info['message'] + '\n' + traceback.format_exc(), ADMIN_LIST[1])
