@@ -160,7 +160,8 @@ def r_expression(message_info):
 
 
 def express(raw_str):
-    """有两个返回值，第二个返回值为None时表示主函数r_expression直接return第一个返回值"""
+    """有两个返回值，第二个返回值为None时表示调用函数需直接return第一个返回值（即将消息发送）
+    两个返回值均存在时，第一个为运算过程的str，第二个参数为最终结果（int）"""
     temp = raw_str
     pattern = re.compile('(\d{0,2}D\d{0,3})(K{0,1}\d{0,2})')
     pattern2 = re.compile('(\d{0,2})D(\d{0,3})')
