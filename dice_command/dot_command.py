@@ -579,6 +579,67 @@ def random_check(message_info):
         elif result == '大成功':
             return f'{dice_name}{nickname}进行{property}{operator}{oper_num}检定: D{set}={point}/' \
                    f'{check_point} {result} 啊，大失败，看来这次没有神明眷顾呢'
+    else:
+        #判断奖励骰和轮数的次数
+        multi_match = re.search('(\d{0,1})#([bpBP])(\d{0,1})', message)
+        dice_times, type, times = multi_match.groups()
+        dice_times = 1 if not dice_times else dice_times
+        times = '1' if not times else times
+        type = type.upper()
+
+        message = message[multi_match.end():]
+        match = re.search(pattern, message)
+        if not match:
+            return '未设置属性或技能成功率，请先.st 属性或技能 技能值'
+        property, operator, point = map(str.strip, match.groups())
+        # 判断是否有掷骰原因，并将原因分离出来
+        oper_num = point
+        if message[match.end():]:
+            dice_name = '由于 ' + message[match.end():]
+        else:
+            dice_name = ''
+        if property in card.keys():
+            point = card[property]
+        elif property.upper() in DICE_SYNONYMS.keys() and card.get(DICE_SYNONYMS[property.upper()]):
+            point = card[DICE_SYNONYMS[property.upper()]]
+            property = DICE_SYNONYMS[property.upper()]
+        else:
+            # 不存在该属性时才会进入
+            if operator and point:
+                # 只有运算符和操作数，没有属性值
+                return f'未设定{property}成功率，请先.st {property} 技能值 或查看.help rc'
+            elif not operator and not point:
+                # 无需运算
+                return f'未设定{property}成功率，请先.st {property} 技能值 或查看.help rc'
+            elif operator and not point:
+                # 只有操作数，此时将操作数看作检定原因
+                dice_name = operator + dice_name
+            else:
+                # 此时通过参数形式指定了成功率
+                pass
+        try:
+            if operator == '+':
+                check_point = int(point) + int(oper_num)
+            elif operator == '-':
+                check_point = int(point) - int(oper_num)
+            elif operator == '*':
+                check_point = int(point) * int(oper_num)
+            elif operator == '/':
+                check_point = round(int(point) / int(oper_num))
+            else:
+                check_point = int(point)
+        except:
+            return '操作数和操作符间不能有空格'
+
+        send_string = f'{dice_name}{nickname}进行{dice_times}次{property}{operator}{oper_num}检定:\n'
+        for index in range(int(dice_times)):
+            point_str, point = express(type + times)
+            print(point)
+            if not point:
+                return point_str
+            result = point_check(check_point, point, set_coc)
+            send_string += f'{point_str}={point}/{check_point} {result}\n'
+        return send_string[:-1]
 
 
 def st_handle(message_info):
