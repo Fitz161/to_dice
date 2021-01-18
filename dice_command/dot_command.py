@@ -5,7 +5,7 @@ from json import dump
 import random
 
 from config import *
-from bot_command.command import change_json_file, read_json_file, get_nickname
+from bot_command.command import change_json_file, read_json_file, get_nickname, text_to_img
 from dice_command.dice_expression import express
 
 
@@ -169,7 +169,7 @@ def set_handle(message_info):
         data:dict = read_json_file(DATA_PATH)
         data['setcoc'][str(group_qq)] = set_point
         with open(DATA_PATH, 'w') as f:
-            f.write(data)
+            dump(data, f)
         if set_point == 0:
             return '默认检定房规已设置：' + str(set_point) + '\n出1大成功\n不满50出96-100大失败，满50出100大失败'
         elif set_point == 1:
@@ -435,11 +435,34 @@ def random_check(message_info):
     card: dict = data[str(QQ)]['card']['default']
     set = read_json_file(DICE_DATA)[str(QQ)]['set']     #默认骰面数
     data: dict = read_json_file(DATA_PATH)
-    try:
-        set_coc = data['setcoc'][str(group_qq)]         #房规
-    except:
+    if group_qq in data['setcoc'].keys():
+        set_coc = data['setcoc'][str(group_qq)]     #房规
+    else:
         set_coc = 0
-    if message[:2] == '困难':
+        data['setcoc'][str(group_qq)] = 0
+        with open(DATA_PATH, 'w') as f:
+            dump(data, f)
+    if re.match('(\d+)([^0-9]*)', message) and not message.__contains__('#'):
+        check_point, reason = re.match('(\d+)([^0-9]*)', message).groups()
+        if reason:
+            dice_name = '由于' + reason
+        else:
+            dice_name = ''
+        point = random.randint(1, set)
+        result = point_check(int(check_point), point, set_coc)
+        if result == '成功':
+            return f'{dice_name}{nickname}进行检定: D{set}={point}/' \
+                   f'{check_point} {result} 成功了呢，真不错呢'
+        elif result == '大成功':
+            return f'{dice_name}{nickname}进行检定: D{set}={point}/' \
+                   f'{check_point} {result} 竟然成功了，创造出奇迹了呢'
+        elif result == '失败':
+            return f'{dice_name}{nickname}进行检定: D{set}={point}/' \
+                   f'{check_point} {result} 失败了呢，真是遗憾呀'
+        elif result == '大成功':
+            return f'{dice_name}{nickname}进行检定: D{set}={point}/' \
+                   f'{check_point} {result} 啊，大失败，看来这次没有神明眷顾呢'
+    elif message[:2] == '困难':
         match = re.search(pattern, message[2:])
         # 判断是否有掷骰原因，并将原因分离出来
         if message[match.end():]:
@@ -451,6 +474,7 @@ def random_check(message_info):
             point = card[property] if not point else point
         elif property.upper() in DICE_SYNONYMS.keys() and card.get(DICE_SYNONYMS[property.upper()]):
             point = card[DICE_SYNONYMS[property.upper()]] if not point else point
+            property = DICE_SYNONYMS[property.upper()]
         else:
             if not point:
                 return f'未设定{property}成功率，请先.st {property} 技能值 或查看.help rc'
@@ -481,6 +505,7 @@ def random_check(message_info):
             point = card[property] if not point else point
         elif property.upper() in DICE_SYNONYMS.keys() and card.get(DICE_SYNONYMS[property.upper()]):
             point = card[DICE_SYNONYMS[property.upper()]] if not point else point
+            property = DICE_SYNONYMS[property.upper()]
         else:
             if not point:
                 return f'未设定{property}成功率，请先.st {property} 技能值 或查看.help rc'
@@ -512,6 +537,7 @@ def random_check(message_info):
             point = card[property]
         elif property.upper() in DICE_SYNONYMS.keys() and card.get(DICE_SYNONYMS[property.upper()]):
             point = card[DICE_SYNONYMS[property.upper()]]
+            property = DICE_SYNONYMS[property.upper()]
         else:
             #不存在该属性时才会进入
             if operator and point:
@@ -536,7 +562,7 @@ def random_check(message_info):
             elif operator == '/':
                 check_point = round(int(point) / int(oper_num))
             else:
-                check_point = point
+                check_point = int(point)
         except:
             return '操作数和操作符间不能有空格'
         point = random.randint(1, set)
@@ -629,7 +655,12 @@ def st_handle(message_info):
 def point_check(property_point, point, rule_num):
     """判断大成功或大失败"""
     if property_point >= point:
-        return_str = '成功'
+        if point <= round(property_point / 5):
+            return_str = '极难成功'
+        elif point <= round(property_point / 2):
+            return_str = '困难成功'
+        else:
+            return_str = '成功'
     else:
         return_str =  '失败'
     if rule_num == 0:
@@ -710,3 +741,4 @@ def point_check(property_point, point, rule_num):
                 return '大失败'
             else:
                 return return_str
+
