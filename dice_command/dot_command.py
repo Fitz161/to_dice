@@ -803,3 +803,21 @@ def point_check(property_point, point, rule_num):
             else:
                 return return_str
 
+
+def sign_in(message_info: dict):
+    QQ = message_info['sender_qq']
+    total_data: dict = read_json_file(SIGN_PATH)
+    total_data.setdefault('%s' % QQ, {'days': 0, 'today': 0, 'points': 0})
+    data = total_data['%s' % QQ]
+    days = data['days']
+    points = data['points']
+    if not data['today']:
+        point = random.randint(20, 50) + days * 5
+        send_string = 'QQ:%d\n签到成功~!\n本次获得香火钱:%d\n剩余香火钱:%d\n累计签到:%d天' % (
+            QQ, point, points + point, days + 1)
+        total_data["%s" % QQ] = {'days': days + 1, 'today': 1, 'points': points + point}
+    else:
+        send_string = f'QQ:{QQ}\n今天已经签到过了呢~\n累计签到:{days}天\n剩余香火钱:{points}'
+    with open(SIGN_PATH, "w") as f:
+        dump(total_data, f)
+    return text_to_img(send_string)
