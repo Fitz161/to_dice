@@ -162,6 +162,7 @@ def r_expression(message_info):
 def express(raw_str):
     """有两个返回值，第二个返回值为None时表示调用函数需直接return第一个返回值（即将消息发送）
     两个返回值均存在时，第一个为运算过程的str，第二个参数为最终结果（int）"""
+    raw_str = raw_str.upper()
     temp = raw_str
     pattern = re.compile('(\d{0,2}D\d{0,3})(K{0,1}\d{0,2})')
     pattern2 = re.compile('(\d{0,2})D(\d{0,3})')
@@ -274,7 +275,7 @@ def express(raw_str):
             # span获取match的范围，group(0)获得match到的内容
             msg_offset += msg_match.span(0)[1] - len(msg_match.group(0)) + len(msg_str)
             exp_offset += exp_match.span(0)[1] - len(exp_match.group(0)) + len(exp_str)
-    print(raw_str)
+    print('掷骰命令: ', raw_str)
     try:
         if raw_str.__contains__('P') or raw_str.__contains__('B'):
             point = round(eval(exp_string))
@@ -282,6 +283,7 @@ def express(raw_str):
         else:
             point = round(eval(raw_str))
             send_string = f'{temp}={raw_str}={point}'
+        print(send_string, '点数', point)
         return send_string, point
     except:
         return '命令或掷骰表达式输入错误', None
