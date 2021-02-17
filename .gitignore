@@ -3,5 +3,10 @@
 .idea/
 v/
 new_command/
+new_command2/
 test.py
 __pycache__/
+data/backup_data
+data/
+data/dice_data/user_data.json
+data/data/data_list.json
