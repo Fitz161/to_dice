@@ -6,6 +6,7 @@
 
 ![Python Version](https://img.shields.io/badge/python-3.6+-blue.svg)
 ![OneBot Version](https://img.shields.io/badge/OneBot-v11-green)
+![LICENSE](https://img.shields.io/github/license/Fitz161/to_dice?color=red)
 
 </div>
 </br>
