@@ -115,6 +115,8 @@ def handle_message(message_queue: Queue):
 def timing_task():
     while True:
         now = datetime.now()
+        if now.second == 0:
+            threading.Thread(target=heart_beat_check, daemon=True).start()
         if now.minute == 0 and now.second == 0:
             if bot_status() == "bot已下线\n":
                 send_private_msg('go-cqhttp已下线', ADMIN_LIST[0])
@@ -298,3 +300,13 @@ def log_handle(message_info):
         send_string = None
     if send_string:
         send_public_msg(send_string, group_qq)
+
+
+def heart_beat_check():
+    url = f''
+    try:
+        res = requests.get(url, timeout=8)
+        if not res.status_code == 200:
+            print('heart-beat check request failed: status is not 200')
+    except requests.RequestException as e:
+        print("heart-beat check request failed: time out", e)
