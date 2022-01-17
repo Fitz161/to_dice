@@ -241,15 +241,17 @@ def express(raw_str):
                 random_num = randint(1, 100)
                 for i in range(times):
                     punish_list.append(randint(0, 10))
-                max_num = max(punish_list)
                 msg_str = f'{random_num}[惩罚骰:'
                 for i in range(times):
                     msg_str += str(punish_list[i]) + ' '
+                max_num = max(punish_list)
                 msg_str = msg_str[:-1] + ']'
                 if max_num == 10:
                     exp_str = '100'
                 elif max_num == 0:
                     exp_str = '0'
+                elif max_num <= (random_num / 10):
+                    exp_str = f'{random_num}'
                 else:
                     exp_str = f'{max_num}{random_num % 10}'
             elif type == 'B':
@@ -257,15 +259,17 @@ def express(raw_str):
                 random_num = randint(1, 100)
                 for i in range(times):
                     reward_list.append(randint(0, 10))
-                min_num = min(reward_list)
                 msg_str = f'{random_num}[奖励骰:'
                 for i in range(times):
                     msg_str += str(reward_list[i]) + ' '
+                min_num = min(reward_list)
                 msg_str = msg_str[:-1] + ']'
                 if min_num == 10:
                     exp_str = '100'
                 elif min_num == 0:
                     exp_str = '0'
+                elif min_num > (random_num / 10):
+                    exp_str = f'{random_num}'
                 else:
                     exp_str = f'{min_num}{random_num % 10}'
             else:
