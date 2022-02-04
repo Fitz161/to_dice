@@ -759,6 +759,193 @@ def st_handle(message_info):
             return send_string[:-1]
 
 
+def san_check(message_info):
+    message: str = message_info['message'][3:].strip()
+    nickname = message_info['nickname']
+    group_qq = message_info['group_qq']
+    QQ = message_info['sender_qq']
+    data: dict = read_json_file(DICE_DATA)
+    card: dict = data[str(QQ)]['card']['default']
+    if re.search('([^0-9/dD ])', message):
+        match = re.search('([^0-9/dD ])', message)
+        dice_name = '由于' + message[match.start():]
+        message = message[:match.start()]
+    else:
+        dice_name = ''
+    if not message:
+        return '用法：.sc[成功损失]/[失败损失] ([当前san值])\n已经.st了理智/san时，可省略最后的参数\n' \
+               '.sc0/1 70\n.sc1d10/1d100 直面外神\n当调用角色卡san时，san会自动更新为sc后的剩余值\n' \
+               '程序上可以损失负数的san，也就是可以用.sc-1d6/-1d6来回复san，但请避免这种奇怪操作\n' \
+               '大失败自动失去最大san值，大失败由setcoc判定'
+    coc_data: dict = read_json_file(DATA_PATH)
+    if not message_info['is_group']:
+        set_coc = 0
+    elif group_qq in coc_data['setcoc'].keys():
+        set_coc = coc_data['setcoc'][str(group_qq)]     #房规
+    else:
+        set_coc = 0
+        coc_data['setcoc'][str(group_qq)] = 0
+        with open(DATA_PATH, 'w') as f:
+            dump(coc_data, f)
+    if '理智' in card.keys():
+        san = card['理智']
+        try:
+            sc_expression, san = message.split()
+            san = int(san)
+            is_give_san = True
+        except:
+            sc_expression = message
+            is_give_san = False
+        success_loss, fail_loss = sc_expression.split('/')
+        if san == 0:
+            return '当前理智值为0，无法进行SAN CHECK'
+        elif san < 0:
+            return '当前理智值为负，无法进行SAN CHECK'
+        else:
+            pattern = re.compile('(\d{0,2})[Dd](\d{0,3})')
+            if re.search(pattern, success_loss):
+                suc_dice_num, suc_dice_face = re.search(pattern, success_loss).groups()
+                suc_dice_num = 1 if not suc_dice_num else suc_dice_num
+                suc_dice_face = 100 if not suc_dice_face else suc_dice_face
+            else:
+                suc_dice_num, suc_dice_face = None, int(success_loss)
+            if re.search(pattern, fail_loss):
+                fail_dice_num, fail_dice_face = re.search(pattern, fail_loss).groups()
+                fail_dice_num = 1 if not fail_dice_num else fail_dice_num
+                fail_dice_face = 100 if not fail_dice_face else fail_dice_face
+            else:
+                fail_dice_num, fail_dice_face = None, fail_loss
+            #dice_num为None时表示成功/失败损失为已给的数，反之则给的掷骰表达式
+
+            success_str, success_loss = express(str(success_loss))
+            fail_str, fail_loss = express(str(success_loss))
+            if not success_loss:
+                return success_str
+            elif not fail_loss:
+                return fail_str
+            else:
+                point = random.randint(1, 100)
+                result = point_check(san, point, set_coc)
+                original_san = san
+                if result == '失败':
+                    san = (san - fail_loss) if (san - fail_loss) > 0 else 0
+                    if not is_give_san:
+                        with open(DICE_DATA, 'w') as f:
+                            data[str(QQ)]['card']['default']['理智'] = san
+                            dump(data, f)
+                    if fail_dice_num is None:
+                        return f'{dice_name}{nickname}进行理智检定(San Check):\n D100={point}/' \
+                               f'{original_san} {result}\n{nickname}的理智减少{fail_loss}点，当前剩余{san}点'
+                    elif fail_dice_num == 1:
+                        return f'{dice_name}{nickname}进行理智检定(San Check):\n D100={point}/' \
+                               f'{original_san} {result}\n{nickname}的理智减少{fail_dice_num}D{fail_dice_face}=' \
+                               f'{fail_loss}点，当前剩余{san}点'
+                    else:
+                        return f'{dice_name}{nickname}进行理智检定(San Check):\n D100={point}/' \
+                               f'{original_san} {result}\n{nickname}的理智减少{fail_str}点，当前剩余{san}点'
+                elif result == '大失败':
+                    san = (san - fail_loss) if (san - fail_loss) > 0 else 0
+                    if not is_give_san:
+                        with open(DICE_DATA, 'w') as f:
+                            data[str(QQ)]['card']['default']['理智'] = san
+                            dump(data, f)
+                    if fail_dice_num is None:
+                        return f'{dice_name}{nickname}进行理智检定(San Check):\n D100={point}/' \
+                               f'{original_san} {result}\n{nickname}的理智减少{fail_dice_num}D{fail_dice_face}=' \
+                               f'{fail_loss}点，当前剩余{san}点'
+                    else:
+                        fail_loss = fail_dice_num * fail_dice_face
+                        return f'{dice_name}{nickname}进行理智检定(San Check):\n D100={point}/' \
+                               f'{original_san} {result}\n{nickname}的理智减少{fail_dice_num}*{fail_dice_face}=' \
+                               f'{fail_loss}点，当前剩余{san}点'
+                else:
+                    san = (san - fail_loss) if (san - fail_loss) > 0 else 0
+                    if not is_give_san:
+                        with open(DICE_DATA, 'w') as f:
+                            data[str(QQ)]['card']['default']['理智'] = san
+                            dump(data, f)
+                    if suc_dice_num is None:
+                        return f'{dice_name}{nickname}进行理智检定(San Check):\n D100={point}/' \
+                               f'{original_san} {result}\n{nickname}的理智减少{success_loss}点，当前剩余{san}点'
+                    elif suc_dice_num == 1:
+                        return f'{dice_name}{nickname}进行理智检定(San Check):\n D100={point}/' \
+                               f'{original_san} {result}\n{nickname}的理智减少{suc_dice_num}D{suc_dice_face}=' \
+                               f'{success_loss}点，当前剩余{san}点'
+                    else:
+                        return f'{dice_name}{nickname}进行理智检定(San Check):\n D100={point}/' \
+                               f'{original_san} {result}\n{nickname}的理智减少{success_str}点，当前剩余{san}点'
+    else:
+        try:
+            sc_expression, san = message.split()
+            san = int(san)
+        except:
+            return '用法：.sc[成功损失]/[失败损失] ([当前san值])\n已经.st了理智/san时，可省略最后的参数.'
+        success_loss, fail_loss = sc_expression.split('/')
+        if san == 0:
+            return '当前理智值为0，无法进行SAN CHECK'
+        elif san < 0:
+            return '当前理智值为负，无法进行SAN CHECK'
+        else:
+            pattern = re.compile('(\d{0,2})[Dd](\d{0,3})')
+            if re.search(pattern, success_loss):
+                suc_dice_num, suc_dice_face = re.search(pattern, success_loss).groups()
+                suc_dice_num = 1 if not suc_dice_num else suc_dice_num
+                suc_dice_face = 100 if not suc_dice_face else suc_dice_face
+            else:
+                suc_dice_num, suc_dice_face = None, int(success_loss)
+            if re.search(pattern, fail_loss):
+                fail_dice_num, fail_dice_face = re.search(pattern, fail_loss).groups()
+                fail_dice_num = 1 if not fail_dice_num else fail_dice_num
+                fail_dice_face = 100 if not fail_dice_face else fail_dice_face
+            else:
+                fail_dice_num, fail_dice_face = None, fail_loss
+            #dice_num为None时表示成功/失败损失为已给的数，反之则给的掷骰表达式
+
+            success_str, success_loss = express(str(success_loss))
+            fail_str, fail_loss = express(str(success_loss))
+            if not success_loss:
+                return success_str
+            elif not fail_loss:
+                return fail_str
+            else:
+                point = random.randint(1, 100)
+                result = point_check(san, point, set_coc)
+                original_san = san
+                if result == '失败':
+                    san = (san - fail_loss) if (san - fail_loss) > 0 else 0
+                    if fail_dice_num is None:
+                        return f'{dice_name}{nickname}进行理智检定(San Check):\n D100={point}/' \
+                               f'{original_san} {result}\n{nickname}的理智减少{fail_loss}点，当前剩余{san}点'
+                    elif fail_dice_num == 1:
+                        return f'{dice_name}{nickname}进行理智检定(San Check):\n D100={point}/' \
+                               f'{original_san} {result}\n{nickname}的理智减少{fail_dice_num}D{fail_dice_face}=' \
+                               f'{fail_loss}点，当前剩余{san}点'
+                    else:
+                        return f'{dice_name}{nickname}进行理智检定(San Check):\n D100={point}/' \
+                               f'{original_san} {result}\n{nickname}的理智减少{fail_str}点，当前剩余{san}点'
+                elif result == '大失败':
+                    fail_loss = fail_dice_num * fail_dice_face
+                    san = (san - fail_loss) if (san - fail_loss) > 0 else 0
+                    if fail_dice_num is None:
+                        return f'{dice_name}{nickname}进行理智检定(San Check):\n D100={point}/' \
+                               f'{original_san} {result}\n{nickname}的理智减少{fail_dice_num}D{fail_dice_face}=' \
+                               f'{fail_loss}点，当前剩余{san}点'
+                    else:
+                        return f'{dice_name}{nickname}进行理智检定(San Check):\n D100={point}/' \
+                               f'{original_san} {result}\n{nickname}的理智减少{fail_dice_num}*{fail_dice_face}=' \
+                               f'{fail_loss}点，当前剩余{san}点'
+                else:
+                    san = (san - fail_loss) if (san - fail_loss) > 0 else 0
+                    if suc_dice_num is None:
+                        return f'{dice_name}{nickname}进行理智检定(San Check):\n D100={point}/' \
+                               f'{original_san} {result}\n{nickname}的理智减少{success_loss}点，当前剩余{san}点'
+                    elif suc_dice_num == 1:
+                        return f'{dice_name}{nickname}进行理智检定(San Check):\n D100={point}/' \
+                               f'{original_san} {result}\n{nickname}的理智减少{suc_dice_num}D{suc_dice_face}=' \
+                               f'{success_loss}点，当前剩余{san}点'
+                    else:
+                        return f'{dice_name}{nickname}进行理智检定(San Check):\n D100={point}/' \
+                               f'{original_san} {result}\n{nickname}的理智减少{success_str}点，当前剩余{san}点'
 
 
 def point_check(property_point, point, rule_num):
