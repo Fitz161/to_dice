@@ -161,11 +161,11 @@ def set_handle(message_info):
         return f'已将{nickname}的默认骰类型更改为D100'
     if raw_str[:6] == 'coc':
         try:
-            set_point = int(raw_str.strip())
+            set_point = int(raw_str[6:].strip())
             if set_point < 0 or set_point > 5:
-                set_point = 0
+                set_point = 3
         except:
-            set_point = 0
+            set_point = 3
         data:dict = read_json_file(DATA_PATH)
         data['setcoc'][str(group_qq)] = set_point
         with open(DATA_PATH, 'w') as f:
@@ -438,8 +438,8 @@ def random_check(message_info):
     if group_qq in data['setcoc'].keys():
         set_coc = data['setcoc'][str(group_qq)]     #房规
     else:
-        set_coc = 0
-        data['setcoc'][str(group_qq)] = 0
+        set_coc = 3
+        data['setcoc'][str(group_qq)] = 3
         with open(DATA_PATH, 'w') as f:
             dump(data, f)
     if re.match('(\d+)([^0-9+*/-]*)', message) and not message.__contains__('#'):
