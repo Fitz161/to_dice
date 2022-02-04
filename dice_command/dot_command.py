@@ -403,9 +403,9 @@ def get_coc_card(num=1):
     card_list = []
     for i in range(num):
         card = {'力量':get_dice_point(3, 6) * 5, '体质':get_dice_point(3, 6) * 5,
-                '体型':get_dice_point(2, 6) * 5, '敏捷':get_dice_point(3, 6) * 5,
-                '外貌':get_dice_point(3, 6) * 5, '智力':get_dice_point(2, 6) * 5,
-                '意志':get_dice_point(3, 6) * 5, '教育':get_dice_point(3, 6) * 5,
+                '体型':(get_dice_point(2, 6) + 6) * 5, '敏捷':get_dice_point(3, 6) * 5,
+                '外貌':get_dice_point(3, 6) * 5, '智力':(get_dice_point(2, 6) + 6) * 5,
+                '意志':get_dice_point(3, 6) * 5, '教育':(get_dice_point(2, 6) + 6) * 5,
                 '幸运':get_dice_point(3, 6) * 5}
         sum = 0
         for point in card.values():
@@ -442,7 +442,8 @@ def random_check(message_info):
         data['setcoc'][str(group_qq)] = 0
         with open(DATA_PATH, 'w') as f:
             dump(data, f)
-    if re.match('(\d+)([^0-9]*)', message) and not message.__contains__('#'):
+    if re.match('(\d+)([^0-9+*/-]*)', message) and not message.__contains__('#'):
+        #match从头开始匹配，当命令含有#时也会匹配到，因此需要去除这种情况
         check_point, reason = re.match('(\d+)([^0-9]*)', message).groups()
         if reason:
             dice_name = '由于' + reason
@@ -450,18 +451,18 @@ def random_check(message_info):
             dice_name = ''
         point = random.randint(1, set)
         result = point_check(int(check_point), point, set_coc)
-        if result == '成功':
-            return f'{dice_name}{nickname}进行检定: D{set}={point}/' \
-                   f'{check_point} {result} 成功了呢，真不错呢'
-        elif result == '大成功':
+        if result == '大成功':
             return f'{dice_name}{nickname}进行检定: D{set}={point}/' \
                    f'{check_point} {result} 竟然成功了，创造出奇迹了呢'
         elif result == '失败':
             return f'{dice_name}{nickname}进行检定: D{set}={point}/' \
                    f'{check_point} {result} 失败了呢，真是遗憾呀'
-        elif result == '大成功':
+        elif result == '大失败':
             return f'{dice_name}{nickname}进行检定: D{set}={point}/' \
                    f'{check_point} {result} 啊，大失败，看来这次没有神明眷顾呢'
+        else:
+            return f'{dice_name}{nickname}进行检定: D{set}={point}/' \
+                   f'{check_point} {result} 成功了呢，真不错呢'
     elif message[:2] == '困难':
         match = re.search(pattern, message[2:])
         # 判断是否有掷骰原因，并将原因分离出来
@@ -481,18 +482,18 @@ def random_check(message_info):
         check_point = round(point / 2)
         point = random.randint(1, set)
         result = point_check(check_point, point, set_coc)
-        if result == '成功':
-            return f'{dice_name}{nickname}进行{property}检定: D{set}={point}/' \
-                   f'{check_point} {result} 成功了呢，真不错呢'
-        elif result == '大成功':
+        if result == '大成功':
             return f'{dice_name}{nickname}进行{property}检定: D{set}={point}/' \
                    f'{check_point} {result} 竟然成功了，创造出奇迹了呢'
         elif result == '失败':
             return f'{dice_name}{nickname}进行{property}检定: D{set}={point}/' \
                    f'{check_point} {result} 失败了呢，真是遗憾呀'
-        elif result == '大成功':
+        elif result == '大失败':
             return f'{dice_name}{nickname}进行{property}检定: D{set}={point}/' \
                    f'{check_point} {result} 啊，大失败，看来这次没有神明眷顾呢'
+        else:
+            return f'{dice_name}{nickname}进行{property}检定: D{set}={point}/' \
+                   f'{check_point} {result[-2:]} 成功了呢，真不错呢'
     elif message[:2] == '极难':
         match = re.search(pattern, message[2:])
         property, operator, point = map(str.strip, match.groups())
@@ -512,23 +513,24 @@ def random_check(message_info):
         check_point = round(point / 10)
         point = random.randint(1, set)
         result = point_check(check_point, point, set_coc)
-        if result == '成功':
-            return f'{dice_name}{nickname}进行{property}检定: D{set}={point}/' \
-                   f'{check_point} {result} 成功了呢，真不错呢'
-        elif result == '大成功':
+        if result == '大成功':
             return f'{dice_name}{nickname}进行{property}检定: D{set}={point}/' \
                    f'{check_point} {result} 竟然成功了，创造出奇迹了呢'
         elif result == '失败':
             return f'{dice_name}{nickname}进行{property}检定: D{set}={point}/' \
                    f'{check_point} {result} 失败了呢，真是遗憾呀'
-        elif result == '大成功':
+        elif result == '大失败':
             return f'{dice_name}{nickname}进行{property}检定: D{set}={point}/' \
                    f'{check_point} {result} 啊，大失败，看来这次没有神明眷顾呢'
+        else:
+            return f'{dice_name}{nickname}进行{property}检定: D{set}={point}/' \
+                   f'{check_point} {result[-2:]} 成功了呢，真不错呢'
     elif not message.__contains__('#'):
         match = re.search(pattern, message)
         property, operator, point = map(str.strip, match.groups())
-        # 判断是否有掷骰原因，并将原因分离出来
-        oper_num = point
+        # 判断是否有掷骰原因,并将原因分离出来
+        oper_num, point = point, None
+        #有运算符时oper_num即为待运算的操作数,否则即为通过参数指定的成功率
         if message[match.end():]:
             dice_name = '由于 ' + message[match.end():]
         else:
@@ -540,17 +542,17 @@ def random_check(message_info):
             property = DICE_SYNONYMS[property.upper()]
         else:
             #不存在该属性时才会进入
-            if operator and point:
-            #只有运算符和操作数，没有属性值
+            if operator and oper_num:
+            #只有运算符和操作数,没有属性值
                 return f'未设定{property}成功率，请先.st {property} 技能值 或查看.help rc'
-            elif not operator and not point:
+            elif not operator and not oper_num:
             #无需运算
                 return f'未设定{property}成功率，请先.st {property} 技能值 或查看.help rc'
-            elif operator and not point:
-            #只有操作数，此时将操作数看作检定原因
+            elif operator and not oper_num:
+            #只有操作数,此时将操作数看作检定原因
                 dice_name = operator + dice_name
             else:
-            #此时通过参数形式指定了成功率
+            #此时通过参数形式指定了成功率,且此时由oper_num保存
                 pass
         try:
             if operator == '+':
@@ -562,23 +564,24 @@ def random_check(message_info):
             elif operator == '/':
                 check_point = round(int(point) / int(oper_num))
             else:
-                check_point = int(point)
+                #此时无运算符,point不为None则表明属性存在并且point为属性值,否则表明通过参数指定了成功率,且保存于oper_num
+                check_point = int(point) if point else int(oper_num)
         except:
             return '操作数和操作符间不能有空格'
         point = random.randint(1, set)
         result = point_check(check_point, point, set_coc)
-        if result == '成功':
-            return f'{dice_name}{nickname}进行{property}{operator}{oper_num}检定: D{set}={point}/' \
-                   f'{check_point} {result} 成功了，真不错呢'
-        elif result == '大成功':
+        if result == '大成功':
             return f'{dice_name}{nickname}进行{property}{operator}{oper_num}检定: D{set}={point}/' \
                    f'{check_point} {result} 竟然成功了，创造出奇迹了呢'
         elif result == '失败':
             return f'{dice_name}{nickname}进行{property}{operator}{oper_num}检定: D{set}={point}/' \
                    f'{check_point} {result} 失败了呢，真是遗憾呀'
-        elif result == '大成功':
+        elif result == '大失败':
             return f'{dice_name}{nickname}进行{property}{operator}{oper_num}检定: D{set}={point}/' \
                    f'{check_point} {result} 啊，大失败，看来这次没有神明眷顾呢'
+        else:
+            return f'{dice_name}{nickname}进行{property}{operator}{oper_num}检定: D{set}={point}/' \
+                   f'{check_point} {result} 成功了，真不错呢'
     else:
         #判断奖励骰和轮数的次数
         multi_match = re.search('(\d{0,1})#([bpBP])(\d{0,1})', message)
@@ -635,7 +638,7 @@ def random_check(message_info):
         for index in range(int(dice_times)):
             point_str, point = express(type + times)
             print(point)
-            if not point:
+            if point is None:
                 return point_str
             result = point_check(check_point, point, set_coc)
             send_string += f'{point_str}={point}/{check_point} {result}\n'
@@ -656,7 +659,7 @@ def st_handle(message_info):
         return f'已删除{nickname}当前角色卡的所有属性'
     elif message[:4] == 'show':
         if message == 'show':
-            trans_tab = str.maketrans('', '', " '{}")
+            trans_tab = str.maketrans(',', ' ', " '{}")
             return nickname + '的角色卡属性为\n' + str(card).translate(trans_tab)
         else:
             property = message[4:].strip()
@@ -685,32 +688,9 @@ def st_handle(message_info):
             else:
                 '属性不存在'
     else:
-        if message.__contains__(':'):
-            items = message.split()
-            for item in items:
-                try:
-                    property, point = item.split(':')
-                    if property == '总计':
-                        continue
-                    if property in card.keys():
-                        card[property] = int(point)
-                    elif property.upper() in DICE_SYNONYMS.keys() and card.get(DICE_SYNONYMS[property.upper()]):
-                        card[DICE_SYNONYMS[property.upper()]] = int(point)
-                    else:
-                        card[property] = int(point)
-                except:
-                    pass
-            with open(DICE_DATA, 'w') as f:
-                dump(data, f)
-            return '已经添加好属性了哦'
-        else:
-            return '正在开发中'
-            pattern = re.compile('([^0-9*/+-])([+*/-]?)(\d+)')
-            offset = 0
-            while re.search(pattern, message[offset:]):
-                match = re.search(pattern, message[offset:])
-                property, operator, point = match.groups()
-                offset += match.span(0)[1] - len(match.group(0))
+        pass
+
+
 
 
 def point_check(property_point, point, rule_num):
