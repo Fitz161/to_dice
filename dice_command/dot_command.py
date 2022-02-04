@@ -688,7 +688,75 @@ def st_handle(message_info):
             else:
                 '属性不存在'
     else:
-        pass
+        if message.__contains__(':'):
+            #带冒号类型键值对处理
+            items = message.split()
+            send_string = '已添加属性:\n'
+            for item in items:
+                try:
+                    property, point = item.split(':')
+                    if property == '总计':
+                        continue
+                    if property in card.keys():
+                        card[property] = int(point)
+                        send_string += property
+                    elif property.upper() in DICE_SYNONYMS.keys() and card.get(DICE_SYNONYMS[property.upper()]):
+                        card[DICE_SYNONYMS[property.upper()]] = int(point)
+                        send_string += DICE_SYNONYMS[property.upper()]
+                    else:
+                        card[property] = int(point)
+                        send_string += property
+                    send_string += ' '
+                except:
+                    pass
+            with open(DICE_DATA, 'w') as f:
+                dump(data, f)
+            return send_string[:-1]
+        else:
+            #不带冒号类型键值对处理
+            message = ''.join(message.split())
+            #message = message.replace(' ', '')
+            pattern = re.compile('([^0-9*/+-]+)([+*/-]?)(\d+)')
+            offset = 0
+            send_string = '已添加属性:\n'
+            while re.search(pattern, message[offset:]):
+                match = re.search(pattern, message[offset:])
+                property, operator, point = match.groups()
+                offset += match.end()
+                if not operator:
+                    try:
+                        if property == '总计':
+                            continue
+                        if property in card.keys():
+                            card[property] = int(point)
+                            send_string += property
+                        elif property.upper() in DICE_SYNONYMS.keys() and card.get(DICE_SYNONYMS[property.upper()]):
+                            card[DICE_SYNONYMS[property.upper()]] = int(point)
+                            send_string += DICE_SYNONYMS[property.upper()]
+                        else:
+                            card[property] = int(point)
+                            send_string += property
+                    except:
+                        pass
+                    send_string += ' '
+                else:
+                    try:
+                        if property == '总计':
+                            continue
+                        if property in card.keys():
+                            card[property] = round(eval(f'{card[property]}{operator}{point}'))
+                            send_string += property + operator + point
+                        elif property.upper() in DICE_SYNONYMS.keys() and card.get(DICE_SYNONYMS[property.upper()]):
+                            card[DICE_SYNONYMS[property.upper()]] = round(eval(f'{card[property]}{operator}{point}'))
+                            send_string += DICE_SYNONYMS[property.upper()] + operator + point + '已修改'
+                        else:
+                            send_string += '无' + property + '属性'
+                    except:
+                        pass
+                    send_string += ' '
+            with open(DICE_DATA, 'w') as f:
+                dump(data, f)
+            return send_string[:-1]
 
 
 
