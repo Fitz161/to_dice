@@ -40,6 +40,23 @@ def welcome(message_info:dict):
         send_public_msg(send_string, group_qq)
 
 
+def group_recall(message_info:dict):
+    group_qq = message_info.get('group_qq')
+    message_id = message_info['message_id']
+    api_url = apiBaseUrl + apiGetMsg
+    data = {
+        'message_id': message_id
+    }
+    response = requests.post(api_url, data=data)
+    if response.status_code == 200:
+        res_data = response.json()['data']
+        card = res_data['sender'].get('card') if res_data['sender'].get('card') else \
+            res_data['sender'].get('nickname')
+        message = res_data['message']
+        send_string = f'欸嘿,{card}偷偷撤回了一条消息,别以为能逃出我的眼睛:{message}'
+        send_public_msg(send_string, group_qq)
+
+
 
 
 def friend_add_request(message_info:dict):
