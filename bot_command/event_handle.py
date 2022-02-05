@@ -23,7 +23,10 @@ def welcome(message_info:dict):
     group_qq = message_info.get('group_qq')
     with open(ACTIVE_PATH) as f:
         active_dict: dict = load(f)
-    is_enable:bool = active_dict[str(group_qq)]['welcome']
+    try:
+        is_enable:bool = active_dict[str(group_qq)]['welcome']
+    except:
+        is_enable = True
     if not is_enable:
         return
     api_url = apiBaseUrl + apiGroupInfo
@@ -37,32 +40,34 @@ def welcome(message_info:dict):
         send_public_msg(send_string, group_qq)
 
 
-def group_recall(message_info:dict):
-    pass
 
 
 def friend_add_request(message_info:dict):
     QQ = message_info['sender_qq']
     data = {
-        'flag': message_info['flag']
+        'flag': message_info['flag'],
+        'approve' : 'true',
+        'remark' : f'最可爱的bot{BOT_NAME}'
     }
-    response = requests.post(apiBaseUrl + apiFriendRequest, data=data)
-    if response.status_code == 200:
-        print(f'添加好友{QQ}')
-        sleep(2)
-        send_private_msg('Botです。\n输入.help查看帮助', QQ)
+    requests.post(apiBaseUrl + apiFriendRequest, data=data)
+    print(f'已添加好友{QQ}')
+    send_private_msg(f'已添加好友{QQ}', ADMIN_LIST[0])
+    sleep(10)
+    send_private_msg(f'Bot{BOT_NAME}です。\n发送.help查看帮助', QQ)
 
 
 def group_add_request(message_info:dict):
     group_qq = message_info["group_qq"]
     data = {
-        'flag': message_info['flag']
+        'flag': message_info['flag'],
+        'approve': 'true',
+        'sub_type': message_info['sub_type']
     }
-    response = requests.post(apiBaseUrl + apiGroupRequest, data=data)
-    if response.status_code == 200:
-        print(f'添加群{group_qq}')
-        sleep(2)
-        send_public_msg("Botです。\n输入'帮助'查看帮助", group_qq)
+    requests.post(apiBaseUrl + apiGroupRequest, data=data)
+    print(f'已添加群{group_qq}')
+    send_private_msg(f'已添加群{group_qq}', ADMIN_LIST[0])
+    sleep(10)
+    send_public_msg(f"Bot{BOT_NAME}です。\n发送.help查看帮助", group_qq)
 
 
 def add_black_list(message_info):
