@@ -5,11 +5,11 @@ import threading
 import hashlib
 import urllib.parse
 from json import loads, load, dump
-from random import sample, choices, randint
+from random import sample, choices, randint, choice
 from time import sleep, localtime, strftime
 
 from jieba import lcut
-from PIL import Image
+from PIL import Image, ImageDraw, ImageFont
 from wordcloud import WordCloud
 from bs4 import BeautifulSoup as bp
 
@@ -51,7 +51,7 @@ def send_private_msg(send_string, QQ):
     api_url = apiBaseUrl + apiPrivateMsg
     response = requests.post(api_url, data=data)
     if response.status_code == 200:
-        print("消息发送成功")
+        print(f"消息 {send_string[:30]} 发送成功")
 
 
 def send_public_msg(send_string, group_qq):
@@ -62,8 +62,13 @@ def send_public_msg(send_string, group_qq):
     }
     api_url = apiBaseUrl + apiGroupMsg
     response = requests.post(api_url, data=data)
+    if read_json_file(ACTIVE_PATH)[str(group_qq)]['log']:
+        time = strftime("%Y-%m-%d %H:%M:%S", localtime())
+        path = BOT_PATH + f'/data/log_data/{group_qq}.txt'
+        with open(path, 'a+') as f:
+            f.write(f'{BOT_NAME}(2184026792) {time}\n{send_string}\n\n')
     if response.status_code == 200:
-        print("消息发送成功")
+        print(f"消息 {send_string[:20]} 发送成功")
 
 
 def send_long_msg(message_info, send_string):
@@ -123,8 +128,8 @@ from dice_command.dice_handle import main_handle
 #避免command和dot_command两个文件循环import
 
 def concat_images(image_names, path, type):
-    COL = [1, 5, 10][type]
-    ROW = [1, 2, 10][type]
+    COL = [1, 5, 10, 3][type]
+    ROW = [1, 2, 10, 3][type]
     UNIT_HEIGHT_SIZE = 900
     UNIT_WIDTH_SIZE = 600
     image_files = []
@@ -274,7 +279,7 @@ def sign_in_info(message_info: dict):
     if message_info['message'] != '信息':
         return
     QQ = message_info['sender_qq']
-    with open(DATA_PATH) as f:
+    with open(SIGN_PATH) as f:
         total_data: dict = load(f)
     data = total_data.get(str(QQ), None)
     if not data:
@@ -986,3 +991,4 @@ def slash_command(message_info):
         else:
             from main_handle import set_active
             set_active(message_info, False)
+            send_public_msg(BOT_NAME + '已经去休息了哦', message_info['group_qq'])
