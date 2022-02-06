@@ -71,17 +71,26 @@ def send_public_msg(send_string, group_qq):
         print(f"消息 {send_string[:20]} 发送成功")
 
 
-def send_long_msg(message_info, send_string):
-    for index in range(0, round((len(send_string) + 99) / 100)):
-        #限制每次发送文本字数不超过100字，总的发送次数不超过5+1次
-        message = send_string[SEND_LENGTH*index : SEND_LENGTH*(index+1)]
-        if not message or index > 5:
-            return
-        if message_info['is_private']:
-            send_private_msg(message, message_info['sender_qq'])
-        elif message_info['is_group']:
-            send_public_msg(message, message_info['group_qq'])
-        sleep(PAUSE_TIME * 2)
+def send_long_msg(message_info, send_string:str):
+    if send_string.__contains__('|||'):
+        message_list = send_string.split('|||')
+        for message in message_list:
+            if message_info['is_private']:
+                send_private_msg(message, message_info['sender_qq'])
+            elif message_info['is_group']:
+                send_public_msg(message, message_info['group_qq'])
+            sleep(PAUSE_TIME * 2)
+    else:
+        for index in range(0, round((len(send_string) + 99) / 100)):
+            #限制每次发送文本字数不超过100字，总的发送次数不超过5+1次
+            message = send_string[SEND_LENGTH*index : SEND_LENGTH*(index+1)]
+            if not message or index > 5:
+                return
+            if message_info['is_private']:
+                send_private_msg(message, message_info['sender_qq'])
+            elif message_info['is_group']:
+                send_public_msg(message, message_info['group_qq'])
+            sleep(PAUSE_TIME * 2)
 
 
 def get_group_name(group_qq)->str:
