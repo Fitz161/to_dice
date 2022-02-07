@@ -855,18 +855,20 @@ def san_check(message_info):
             return '当前理智值为负，无法进行SAN CHECK'
         else:
             pattern = re.compile('(\d{0,2})[Dd](\d{0,3})')
+            # 获取sc成功时使用的骰子数和面数
             if re.search(pattern, success_loss):
                 suc_dice_num, suc_dice_face = re.search(pattern, success_loss).groups()
                 # 未指定骰子数或面数，使用默认值
-                suc_dice_num = 1 if not suc_dice_num else suc_dice_num
-                suc_dice_face = 10 if not suc_dice_face else suc_dice_face
+                suc_dice_num = 1 if not suc_dice_num else int(suc_dice_num)
+                suc_dice_face = 2 if not suc_dice_face else int(suc_dice_face)
             else:
                 suc_dice_num, suc_dice_face = None, int(success_loss)
+            # 获取sc失败时使用的骰子数和面数
             if re.search(pattern, fail_loss):
                 fail_dice_num, fail_dice_face = re.search(pattern, fail_loss).groups()
                 # 未指定骰子数或面数，使用默认值
-                fail_dice_num = 1 if not fail_dice_num else fail_dice_num
-                fail_dice_face = 10 if not fail_dice_face else fail_dice_face
+                fail_dice_num = 1 if not fail_dice_num else int(fail_dice_num)
+                fail_dice_face = 10 if not fail_dice_face else int(fail_dice_face)
             else:
                 fail_dice_num, fail_dice_face = None, fail_loss
             #dice_num为None时表示成功/失败损失为已给的数，反之则给的掷骰表达式
@@ -883,6 +885,10 @@ def san_check(message_info):
                 original_san = san
                 if result == '失败':
                     san = (san - fail_loss) if (san - fail_loss) > 0 else 0
+                    if san <= 0:
+                        suffix = '\n已丧失全部理智，那么调查员将会成为一个无药可救的永久性疯狂角色，真是不幸呢'
+                    else:
+                        suffix = ''
                     if not is_give_san:
                         with open(DICE_DATA, 'w') as f:
                             data[str(QQ)]['card']['default']['理智'] = san
@@ -890,16 +896,20 @@ def san_check(message_info):
                             dump(data, f)
                     if fail_dice_num is None:
                         return f'{dice_name}{nickname}进行理智检定(San Check):\n D100={point}/' \
-                               f'{original_san} {result}\n{nickname}的理智减少{fail_loss}点，当前剩余{san}点'
+                               f'{original_san} [{result}]\n{nickname}的理智减少{fail_loss}点，当前剩余{san}点' + suffix
                     elif fail_dice_num == 1:
                         return f'{dice_name}{nickname}进行理智检定(San Check):\n D100={point}/' \
-                               f'{original_san} {result}\n{nickname}的理智减少{fail_dice_num}D{fail_dice_face}=' \
-                               f'{fail_loss}点，当前剩余{san}点'
+                               f'{original_san} [{result}]\n{nickname}的理智减少{fail_dice_num}D{fail_dice_face}=' \
+                               f'{fail_loss}点，当前剩余{san}点' + suffix
                     else:
                         return f'{dice_name}{nickname}进行理智检定(San Check):\n D100={point}/' \
-                               f'{original_san} {result}\n{nickname}的理智减少{fail_str}点，当前剩余{san}点'
+                               f'{original_san} [{result}]\n{nickname}的理智减少{fail_str}点，当前剩余{san}点' + suffix
                 elif result == '大失败':
                     san = (san - fail_loss) if (san - fail_loss) > 0 else 0
+                    if san <= 0:
+                        suffix = '\n已丧失全部理智，那么调查员将会成为一个无药可救的永久性疯狂角色，真是不幸呢'
+                    else:
+                        suffix = ''
                     if not is_give_san:
                         with open(DICE_DATA, 'w') as f:
                             data[str(QQ)]['card']['default']['理智'] = san
@@ -907,15 +917,20 @@ def san_check(message_info):
                             dump(data, f)
                     if fail_dice_num is None:
                         return f'{dice_name}{nickname}进行理智检定(San Check):\n D100={point}/' \
-                               f'{original_san} {result}\n{nickname}的理智减少{fail_dice_num}D{fail_dice_face}=' \
-                               f'{fail_loss}点，当前剩余{san}点'
+                               f'{original_san} [{result}]\n{nickname}的理智减少{fail_dice_num}D{fail_dice_face}=' \
+                               f'{fail_loss}点，当前剩余{san}点' + suffix
                     else:
                         fail_loss = fail_dice_num * fail_dice_face
                         return f'{dice_name}{nickname}进行理智检定(San Check):\n D100={point}/' \
-                               f'{original_san} {result}\n{nickname}的理智减少{fail_dice_num}*{fail_dice_face}=' \
-                               f'{fail_loss}点，当前剩余{san}点'
+                               f'{original_san} [{result}]\n{nickname}的理智减少{fail_dice_num}*{fail_dice_face}=' \
+                               f'{fail_loss}点，当前剩余{san}点' + suffix
                 else:
-                    san = (san - fail_loss) if (san - fail_loss) > 0 else 0
+                    # sc成功的情况
+                    san = (san - success_loss) if (san - success_loss) > 0 else 0
+                    if san <= 0:
+                        suffix = '\n已丧失全部理智，那么调查员将会成为一个无药可救的永久性疯狂角色，真是不幸呢'
+                    else:
+                        suffix = ''
                     if not is_give_san:
                         with open(DICE_DATA, 'w') as f:
                             data[str(QQ)]['card']['default']['理智'] = san
@@ -923,14 +938,14 @@ def san_check(message_info):
                             dump(data, f)
                     if suc_dice_num is None:
                         return f'{dice_name}{nickname}进行理智检定(San Check):\n D100={point}/' \
-                               f'{original_san} {result}\n{nickname}的理智减少{success_loss}点，当前剩余{san}点'
+                               f'{original_san} [{result}]\n{nickname}的理智减少{success_loss}点，当前剩余{san}点' + suffix
                     elif suc_dice_num == 1:
                         return f'{dice_name}{nickname}进行理智检定(San Check):\n D100={point}/' \
-                               f'{original_san} {result}\n{nickname}的理智减少{suc_dice_num}D{suc_dice_face}=' \
-                               f'{success_loss}点，当前剩余{san}点'
+                               f'{original_san} [{result}]\n{nickname}的理智减少{suc_dice_num}D{suc_dice_face}=' \
+                               f'{success_loss}点，当前剩余{san}点' + suffix
                     else:
                         return f'{dice_name}{nickname}进行理智检定(San Check):\n D100={point}/' \
-                               f'{original_san} {result}\n{nickname}的理智减少{success_str}点，当前剩余{san}点'
+                               f'{original_san} [{result}]\n{nickname}的理智减少{success_str}点，当前剩余{san}点' + suffix
     else:
         try:
             sc_expression, san = message.split()
@@ -946,14 +961,14 @@ def san_check(message_info):
             pattern = re.compile('(\d{0,2})[Dd](\d{0,3})')
             if re.search(pattern, success_loss):
                 suc_dice_num, suc_dice_face = re.search(pattern, success_loss).groups()
-                suc_dice_num = 1 if not suc_dice_num else suc_dice_num
-                suc_dice_face = 100 if not suc_dice_face else suc_dice_face
+                suc_dice_num = 1 if not suc_dice_num else int(suc_dice_num)
+                suc_dice_face = 2 if not suc_dice_face else int(suc_dice_face)
             else:
                 suc_dice_num, suc_dice_face = None, int(success_loss)
             if re.search(pattern, fail_loss):
                 fail_dice_num, fail_dice_face = re.search(pattern, fail_loss).groups()
-                fail_dice_num = 1 if not fail_dice_num else fail_dice_num
-                fail_dice_face = 100 if not fail_dice_face else fail_dice_face
+                fail_dice_num = 1 if not fail_dice_num else int(fail_dice_num)
+                fail_dice_face = 10 if not fail_dice_face else int(fail_dice_face)
             else:
                 fail_dice_num, fail_dice_face = None, fail_loss
             #dice_num为None时表示成功/失败损失为已给的数，反之则给的掷骰表达式
@@ -970,39 +985,51 @@ def san_check(message_info):
                 original_san = san
                 if result == '失败':
                     san = (san - fail_loss) if (san - fail_loss) > 0 else 0
+                    if san <= 0:
+                        suffix = '\n已丧失全部理智，那么调查员将会成为一个无药可救的永久性疯狂角色，真是不幸呢'
+                    else:
+                        suffix = ''
                     if fail_dice_num is None:
                         return f'{dice_name}{nickname}进行理智检定(San Check):\n D100={point}/' \
-                               f'{original_san} {result}\n{nickname}的理智减少{fail_loss}点，当前剩余{san}点'
+                               f'{original_san} [{result}]\n{nickname}的理智减少{fail_loss}点，当前剩余{san}点' + suffix
                     elif fail_dice_num == 1:
                         return f'{dice_name}{nickname}进行理智检定(San Check):\n D100={point}/' \
-                               f'{original_san} {result}\n{nickname}的理智减少{fail_dice_num}D{fail_dice_face}=' \
-                               f'{fail_loss}点，当前剩余{san}点'
+                               f'{original_san} [{result}]\n{nickname}的理智减少{fail_dice_num}D{fail_dice_face}=' \
+                               f'{fail_loss}点，当前剩余{san}点' + suffix
                     else:
                         return f'{dice_name}{nickname}进行理智检定(San Check):\n D100={point}/' \
-                               f'{original_san} {result}\n{nickname}的理智减少{fail_str}点，当前剩余{san}点'
+                               f'{original_san} [{result}]\n{nickname}的理智减少{fail_str}点，当前剩余{san}点' + suffix
                 elif result == '大失败':
                     fail_loss = fail_dice_num * fail_dice_face
                     san = (san - fail_loss) if (san - fail_loss) > 0 else 0
+                    if san <= 0:
+                        suffix = '\n已丧失全部理智，那么调查员将会成为一个无药可救的永久性疯狂角色，真是不幸呢'
+                    else:
+                        suffix = ''
                     if fail_dice_num is None:
                         return f'{dice_name}{nickname}进行理智检定(San Check):\n D100={point}/' \
-                               f'{original_san} {result}\n{nickname}的理智减少{fail_dice_num}D{fail_dice_face}=' \
-                               f'{fail_loss}点，当前剩余{san}点'
+                               f'{original_san} [{result}]\n{nickname}的理智减少{fail_dice_num}D{fail_dice_face}=' \
+                               f'{fail_loss}点，当前剩余{san}点' + suffix
                     else:
                         return f'{dice_name}{nickname}进行理智检定(San Check):\n D100={point}/' \
-                               f'{original_san} {result}\n{nickname}的理智减少{fail_dice_num}*{fail_dice_face}=' \
-                               f'{fail_loss}点，当前剩余{san}点'
+                               f'{original_san} [{result}]\n{nickname}的理智减少{fail_dice_num}*{fail_dice_face}=' \
+                               f'{fail_loss}点，当前剩余{san}点' + suffix
                 else:
                     san = (san - fail_loss) if (san - fail_loss) > 0 else 0
+                    if san <= 0:
+                        suffix = '\n已丧失全部理智，那么调查员将会成为一个无药可救的永久性疯狂角色，真是不幸呢'
+                    else:
+                        suffix = ''
                     if suc_dice_num is None:
                         return f'{dice_name}{nickname}进行理智检定(San Check):\n D100={point}/' \
-                               f'{original_san} {result}\n{nickname}的理智减少{success_loss}点，当前剩余{san}点'
+                               f'{original_san} [{result}]\n{nickname}的理智减少{success_loss}点，当前剩余{san}点' + suffix
                     elif suc_dice_num == 1:
                         return f'{dice_name}{nickname}进行理智检定(San Check):\n D100={point}/' \
-                               f'{original_san} {result}\n{nickname}的理智减少{suc_dice_num}D{suc_dice_face}=' \
-                               f'{success_loss}点，当前剩余{san}点'
+                               f'{original_san} [{result}]\n{nickname}的理智减少{suc_dice_num}D{suc_dice_face}=' \
+                               f'{success_loss}点，当前剩余{san}点' + suffix
                     else:
                         return f'{dice_name}{nickname}进行理智检定(San Check):\n D100={point}/' \
-                               f'{original_san} {result}\n{nickname}的理智减少{success_str}点，当前剩余{san}点'
+                               f'{original_san} [{result}]\n{nickname}的理智减少{success_str}点，当前剩余{san}点' + suffix
 
 
 def point_check(property_point, point, rule_num):
