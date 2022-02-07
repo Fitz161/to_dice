@@ -257,7 +257,18 @@ def random_name(message_info):
     message:str = message_info['message'][5:].strip()
     nickname = message_info['nickname']
     send_string = f'emm 让我想想，{nickname}的随即昵称:\n'
-    command_list = message.split()
+    # command_list = message.split()
+    # 中间出现空格时也能正确处理
+    pattern = re.compile('([cenzhjp]+) *(\d{1,2})')
+    match = re.search(pattern, message)
+    if match:
+        command_list = list(match.groups())
+        for item in command_list:
+            if item == '':
+                command_list.remove(item)
+
+    else:
+        command_list = message.split()
     if command_list is None:
         return send_string + ''.join(get_random_name())
     elif len(command_list) == 1:
