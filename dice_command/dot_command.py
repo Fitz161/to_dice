@@ -407,13 +407,14 @@ def get_coc_card(num=1):
                 '外貌':get_dice_point(3, 6) * 5, '智力':(get_dice_point(2, 6) + 6) * 5,
                 '意志':get_dice_point(3, 6) * 5, '教育':(get_dice_point(2, 6) + 6) * 5,
                 '幸运':get_dice_point(3, 6) * 5}
-        card['hp'] = round((card['体质'] + card['体型']) / 2)
-        card['san'] = card['意志']
         sum = 0
         for point in card.values():
             sum += point
         no_luck_sum = sum - card['幸运']
-        card['总计'] = f'{no_luck_sum}/{sum}'
+        sum = f'{no_luck_sum}/{sum}'
+        card['hp'] = round((card['体质'] + card['体型']) / 10)
+        card['san'] = card['意志']
+        card['总计'] = sum
         card_list.append(card)
     return card_list
 
@@ -754,6 +755,9 @@ def st_handle(message_info):
                         else:
                             card[property] = int(point)
                             send_string += property
+                        if property == 'san' and point <= 0:
+                            send_string += '已丧失全部理智，那么调查员将会成为一个无药可救的永久性疯狂角色，真是不幸呢'
+                            break
                     except Exception as e:
                         print(e)
                     send_string += ' '
@@ -773,11 +777,20 @@ def st_handle(message_info):
                         elif property == '理智':
                             property = 'san'
                         if property in card.keys():
-                            card[property] = round(eval(f'{card[property]}{operator}{point}'))
-                            send_string += property + operator + log + point + '已修改'
+                            new_point = round(eval(f'{card[property]}{operator}{point}'))
+                            card[property] = new_point
+                            send_string += property + operator + log + point + '=' + str(new_point) + '已修改'
+                            if property == 'san' and new_point <= 0:
+                                send_string += '已丧失全部理智，那么调查员将会成为一个无药可救的永久性疯狂角色，真是不幸呢.'
+                                break
                         elif property.upper() in DICE_SYNONYMS.keys() and card.get(DICE_SYNONYMS[property.upper()]):
-                            card[DICE_SYNONYMS[property.upper()]] = round(eval(f'{card[property]}{operator}{point}'))
-                            send_string += DICE_SYNONYMS[property.upper()] + operator + log + point + '已修改'
+                            new_point = round(eval(f'{card[property]}{operator}{point}'))
+                            card[DICE_SYNONYMS[property.upper()]] = new_point
+                            send_string += DICE_SYNONYMS[property.upper()]\
+                                           + operator + log + point + '=' + str(new_point) + '已修改'
+                            if property == 'san' and new_point <= 0:
+                                send_string += '已丧失全部理智，那么调查员将会成为一个无药可救的永久性疯狂角色，真是不幸呢.'
+                                break
                         else:
                             send_string += '无' + property + '属性'
                     except Exception as e:
@@ -802,22 +815,21 @@ def san_check(message_info):
     else:
         dice_name = ''
     if not message:
-        return '用法：.sc[成功损失]/[失败损失] ([当前san值])\n已经.st了理智/san时，可省略最后的参数\n' \
-               '.sc0/1 70\n.sc1d10/1d100 直面外神\n当调用角色卡san时，san会自动更新为sc后的剩余值\n' \
-               '程序上可以损失负数的san，也就是可以用.sc-1d6/-1d6来回复san，但请避免这种奇怪操作\n' \
-               '大失败自动失去最大san值，大失败由setcoc判定'
+        return '用法：.sc[成功损失]/[失败损失] ([当前san值])\n已经.st了理智/san时，可省略最后的参数\n'
+
     coc_data: dict = read_json_file(DATA_PATH)
     if not message_info['is_group']:
-        set_coc = 0
+        set_coc = 3
     elif group_qq in coc_data['setcoc'].keys():
         set_coc = coc_data['setcoc'][str(group_qq)]     #房规
     else:
-        set_coc = 0
-        coc_data['setcoc'][str(group_qq)] = 0
+        set_coc = 3
+        coc_data['setcoc'][str(group_qq)] = 3
         with open(DATA_PATH, 'w') as f:
             dump(coc_data, f)
-    if '理智' in card.keys():
-        san = card['理智']
+    # 已经设置san属性
+    if  'san' in card.keys() or '理智' in card.keys():
+        san:int = card.get('san') if 'san' in card.keys() else card.get('理智')
         try:
             sc_expression, san = message.split()
             san = int(san)
@@ -834,20 +846,22 @@ def san_check(message_info):
             pattern = re.compile('(\d{0,2})[Dd](\d{0,3})')
             if re.search(pattern, success_loss):
                 suc_dice_num, suc_dice_face = re.search(pattern, success_loss).groups()
+                # 未指定骰子数或面数，使用默认值
                 suc_dice_num = 1 if not suc_dice_num else suc_dice_num
-                suc_dice_face = 100 if not suc_dice_face else suc_dice_face
+                suc_dice_face = 10 if not suc_dice_face else suc_dice_face
             else:
                 suc_dice_num, suc_dice_face = None, int(success_loss)
             if re.search(pattern, fail_loss):
                 fail_dice_num, fail_dice_face = re.search(pattern, fail_loss).groups()
+                # 未指定骰子数或面数，使用默认值
                 fail_dice_num = 1 if not fail_dice_num else fail_dice_num
-                fail_dice_face = 100 if not fail_dice_face else fail_dice_face
+                fail_dice_face = 10 if not fail_dice_face else fail_dice_face
             else:
                 fail_dice_num, fail_dice_face = None, fail_loss
             #dice_num为None时表示成功/失败损失为已给的数，反之则给的掷骰表达式
 
             success_str, success_loss = express(str(success_loss))
-            fail_str, fail_loss = express(str(success_loss))
+            fail_str, fail_loss = express(str(fail_loss))
             if not success_loss:
                 return success_str
             elif not fail_loss:
@@ -861,6 +875,7 @@ def san_check(message_info):
                     if not is_give_san:
                         with open(DICE_DATA, 'w') as f:
                             data[str(QQ)]['card']['default']['理智'] = san
+                            data[str(QQ)]['card']['default']['san'] = san
                             dump(data, f)
                     if fail_dice_num is None:
                         return f'{dice_name}{nickname}进行理智检定(San Check):\n D100={point}/' \
@@ -877,6 +892,7 @@ def san_check(message_info):
                     if not is_give_san:
                         with open(DICE_DATA, 'w') as f:
                             data[str(QQ)]['card']['default']['理智'] = san
+                            data[str(QQ)]['card']['default']['san'] = san
                             dump(data, f)
                     if fail_dice_num is None:
                         return f'{dice_name}{nickname}进行理智检定(San Check):\n D100={point}/' \
@@ -892,6 +908,7 @@ def san_check(message_info):
                     if not is_give_san:
                         with open(DICE_DATA, 'w') as f:
                             data[str(QQ)]['card']['default']['理智'] = san
+                            data[str(QQ)]['card']['default']['san'] = san
                             dump(data, f)
                     if suc_dice_num is None:
                         return f'{dice_name}{nickname}进行理智检定(San Check):\n D100={point}/' \
@@ -931,7 +948,7 @@ def san_check(message_info):
             #dice_num为None时表示成功/失败损失为已给的数，反之则给的掷骰表达式
 
             success_str, success_loss = express(str(success_loss))
-            fail_str, fail_loss = express(str(success_loss))
+            fail_str, fail_loss = express(str(fail_loss))
             if not success_loss:
                 return success_str
             elif not fail_loss:
