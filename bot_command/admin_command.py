@@ -167,8 +167,23 @@ def bot_on(message_info, is_active):
     if is_active:
         send_string = BOT_NAME + '可没有在偷懒哦'
     else:
-        set_active(message_info, True)
+        set_active(message_info, True, key='active')
         send_string = BOT_NAME + '已经开始工作了哦'
+    if message_info['is_private']:
+        send_private_msg(send_string, message_info['sender_qq'])
+    elif message_info['is_group']:
+        send_public_msg(send_string, message_info['group_qq'])
+
+
+def recall_on(message_info, is_active):
+    from config import BOT_NAME
+    from main_handle import set_active
+    if is_active:
+        set_active(message_info, is_active, key='recall')
+        send_string = '开启防撤回，嘿嘿'
+    else:
+        set_active(message_info, is_active, key='recall')
+        send_string = '防撤回关闭，有些小秘密只有你知' + BOT_NAME + '知'
     if message_info['is_private']:
         send_private_msg(send_string, message_info['sender_qq'])
     elif message_info['is_group']:
