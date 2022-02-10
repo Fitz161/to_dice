@@ -12,7 +12,9 @@ def main_handle(message_info):
         group_qq = message_info['group_qq']
         QQ = message_info['sender_qq']
         nickname = message_info['nickname']
-        if message[:3].lower() == 'set':
+        if message[:2].lower() == 'ra' or message[:2] == 'rc':
+            send_string = random_check(message_info)
+        elif message[:3].lower() == 'set':
             send_string = set_handle(message_info)
         elif message[:3].lower() == 'coc':
             send_string = f'{nickname}的调查员作成:'
@@ -20,14 +22,12 @@ def main_handle(message_info):
             try:
                 cards = get_coc_card(int(message[3:]))
                 for card in cards:
-                    send_string += str(card).translate(trans_tab) + '\n'
-                send_string = send_string[:-1]
+                    send_string += str(card).translate(trans_tab) + '^^'
+                send_string = send_string[:-2]
             except:
                 send_string += str(get_coc_card()[0]).translate(trans_tab)
         elif message[:2].lower() == 'dk':
             send_string = sign_in(message_info)
-        elif message[:2].lower() == 'rc' or message[:2] == 'ra':
-            send_string = random_check(message_info)
         elif message[:5].lower() == 'rules':
             send_string = '程序猿正在爆肝开发中'
         elif message[:1].lower() == 'r':
@@ -67,6 +67,17 @@ def main_handle(message_info):
                     from main_handle import set_active
                     set_active(message_info, False)
                     send_string = BOT_NAME + '已经去休息了哦'
+            elif message.lower().find('recall') != -1:
+                from bot_command.admin_command import recall_on
+                if message.lower().find('on'):
+                    recall_on(message_info, True)
+                    return
+                elif message.lower().find('off'):
+                    recall_on(message_info, False)
+                    return
+                else:
+                    send_string = '请使用.recall on 和.recall off'
+
         if not send_string:
             return
         send_long_msg(message_info, send_string)
