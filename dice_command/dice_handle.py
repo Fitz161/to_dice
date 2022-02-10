@@ -38,6 +38,8 @@ def main_handle(message_info):
             send_string = san_check(message_info)
         elif message[:4].lower() == 'help':
             send_string = show_command_doc(message_info)
+        elif message[:4].lower() == 'draw':
+            send_string = draw_card(message_info)
         elif message.lower() == 'jrrp':
             send_string = today_fortune(message_info)
         elif message[:2].lower() == 'ob':

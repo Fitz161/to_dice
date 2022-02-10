@@ -1123,6 +1123,24 @@ def point_check(property_point, point, rule_num):
                 return return_str
 
 
+def draw_card(message_info: dict):
+    card_type: str = message_info['message'][5:].strip()
+    if card_type == '牌堆':
+        trans_tab = str.maketrans(',', ' ', " '{}")
+        return '已加载的牌堆:\n' + str(CARD_LIST).translate(trans_tab)
+    if not card_type in CARD_LIST:
+        return f'咦，{BOT_NAME}没有找到对应的牌堆呢，要不换个关键词试试看？\n。`draw牌堆`可以查看已经加载的牌堆哦'
+    else:
+        card_dict = read_json_file(CARD_DATA)
+        result:str = random.choice(card_dict[card_type])
+        pattern = re.compile('\[(.+?)\]')
+        # 对牌堆结果中的0或多个[掷骰表达式]进行处理
+        while re.search(pattern, result):
+            match = re.search(pattern, result)
+            result = result.replace(result[match.span()[0]:match.span()[1]], str(express(match.groups()[0])[1]))
+        return f'{BOT_NAME}从有关{card_type}的牌堆中随手摸了一张，结果是：\n' + result
+
+
 def sign_in(message_info: dict):
     QQ = message_info['sender_qq']
     total_data: dict = read_json_file(SIGN_PATH)
