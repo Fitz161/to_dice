@@ -1,9 +1,10 @@
 import requests
 from time import sleep
-from json import load
+from json import load, dump
 
 from config import *
-from bot_command.command import send_public_msg, send_private_msg
+from bot_command.command import send_public_msg, send_private_msg, read_json_file
+
 
 def get_group_admin(message_info):
     if not message_info['is_group']:
@@ -43,6 +44,13 @@ def welcome(message_info:dict):
 def group_recall(message_info:dict):
     group_qq = message_info.get('group_qq')
     message_id = message_info['message_id']
+    active_dict = read_json_file(ACTIVE_PATH)
+    try:
+        is_enable:bool = active_dict[str(group_qq)]['recall']
+    except:
+        is_enable = False
+    if not is_enable:
+        return
     api_url = apiBaseUrl + apiGetMsg
     data = {
         'message_id': message_id
@@ -84,6 +92,15 @@ def group_add_request(message_info:dict):
     print(f'已添加群{group_qq}')
     send_private_msg(f'已添加群{group_qq}', ADMIN_LIST[0])
     sleep(10)
+    with open(ACTIVE_PATH) as f:
+        active_dict: dict = load(f)
+    if str(group_qq) not in active_dict.keys():
+        active_dict.setdefault(str(group_qq), {'active': True, 'observer': True, 'entertain_mode': True,
+                                               'jrrp': True, 'welcome': True, 'listen_at': True,
+                                               'deck': True, 'draw': True, 'debug': True,
+                                               'log': False, 'recall': False})
+    with open(ACTIVE_PATH, 'w') as f:
+        dump(active_dict, f)
     send_public_msg(f"Bot{BOT_NAME}です。\n发送.help查看帮助", group_qq)
 
 
