@@ -38,6 +38,8 @@ def main_handle(message_info):
             send_string = san_check(message_info)
         elif message[:2].lower() == 'li':
             send_string = temporary_insane()
+        elif message[:2].lower() == 'ti':
+            send_string = permanent_insane()
         elif message[:4].lower() == 'help':
             send_string = show_command_doc(message_info)
         elif message[:4].lower() == 'draw':
@@ -77,7 +79,6 @@ def main_handle(message_info):
                     recall_on(message_info, True)
                     return
                 elif message.lower().find('off'):
-                    recall_on(message_info, False)
                     return
                 else:
                     send_string = '请使用.recall on 和.recall off'
