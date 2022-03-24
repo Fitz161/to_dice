@@ -752,25 +752,24 @@ def st_handle(message_info):
                 property, operator, point = match.groups()
                 offset += match.end()
                 if not operator:
-                    try:
-                        if property == '总计':
-                            continue
-                        elif property == '理智':
-                            property = 'san'
-                        if property in card.keys():
-                            card[property] = int(point)
-                            send_string += property
-                        elif property.upper() in DICE_SYNONYMS.keys() and card.get(DICE_SYNONYMS[property.upper()]):
-                            card[DICE_SYNONYMS[property.upper()]] = int(point)
-                            send_string += DICE_SYNONYMS[property.upper()]
-                        else:
-                            card[property] = int(point)
-                            send_string += property
-                        if property == 'san' and point <= 0:
-                            send_string += '已丧失全部理智，那么调查员将会成为一个无药可救的永久性疯狂角色，真是不幸呢'
-                            break
-                    except Exception as e:
-                        print(e)
+                    # reg使用+匹配，point一定为数字字符串
+                    point = int(point)
+                    if property == '总计':
+                        continue
+                    elif property == '理智':
+                        property = 'san'
+                    if property in card.keys():
+                        card[property] = point
+                        send_string += property
+                    elif property.upper() in DICE_SYNONYMS.keys() and card.get(DICE_SYNONYMS[property.upper()]):
+                        card[DICE_SYNONYMS[property.upper()]] = int(point)
+                        send_string += DICE_SYNONYMS[property.upper()]
+                    else:
+                        card[property] = point
+                        send_string += property
+                    if property == 'san' and point <= 0:
+                        send_string += '已丧失全部理智，那么调查员将会成为一个无药可救的永久性疯狂角色，真是不幸呢'
+                        return send_string
                     send_string += ' '
                 else:
                     try:
@@ -806,6 +805,7 @@ def st_handle(message_info):
                             send_string += '无' + property + '属性'
                     except Exception as e:
                         print(e)
+                        return 'st指令格式错误'
                     send_string += ' '
             with open(DICE_DATA, 'w') as f:
                 dump(data, f)
@@ -875,9 +875,9 @@ def san_check(message_info):
 
             success_str, success_loss = express(str(success_loss))
             fail_str, fail_loss = express(str(fail_loss))
-            if not success_loss:
+            if success_loss is None:
                 return success_str
-            elif not fail_loss:
+            elif fail_loss is None:
                 return fail_str
             else:
                 point = random.randint(1, 100)
@@ -917,7 +917,7 @@ def san_check(message_info):
                             dump(data, f)
                     if fail_dice_num is None:
                         return f'{dice_name}{nickname}进行理智检定(San Check):\n D100={point}/' \
-                               f'{original_san} [{result}]\n{nickname}的理智减少{fail_dice_num}D{fail_dice_face}=' \
+                               f'{original_san} [{result}]\n{nickname}的理智减少' \
                                f'{fail_loss}点，当前剩余{san}点' + suffix
                     else:
                         fail_loss = fail_dice_num * fail_dice_face
