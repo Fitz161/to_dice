@@ -58,7 +58,7 @@ def main_handle(message_info):
             send_string = calculate_phasor(message_info)
         else:
             send_string = None
-        #只有群消息才会触发的命令
+        #只有群消息才会触发的命令，不会受上方关键字影响
         if message_info['is_group']:
             from bot_command.event_handle import get_group_admin, leave_group
             if message.lower() == 'leave' or message.lower() == 'dismiss':
@@ -75,10 +75,12 @@ def main_handle(message_info):
                     send_string = BOT_NAME + '已经去休息了哦'
             elif message.lower().find('recall') != -1:
                 from bot_command.admin_command import recall_on
-                if message.lower().find('on'):
+                if message.lower().find('on') != -1:
+                    # 未查找到会返回-1，而bool(-1) = True
                     recall_on(message_info, True)
                     return
-                elif message.lower().find('off'):
+                elif message.lower().find('off') != -1:
+                    recall_on(message_info, False)
                     return
                 else:
                     send_string = '请使用.recall on 和.recall off'
