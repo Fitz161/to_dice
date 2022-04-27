@@ -36,6 +36,8 @@ def main_handle(message_info):
             send_string =st_handle(message_info)
         elif message[:2].lower() == 'sc':
             send_string = san_check(message_info)
+        elif message[:2].lower() == 'pc':
+            send_string = player_card(message_info)
         elif message[:2].lower() == 'li':
             send_string = temporary_insane()
         elif message[:2].lower() == 'ti':

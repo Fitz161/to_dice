@@ -317,6 +317,9 @@ def random_name(message_info):
 
 
 def get_random_name(num=1, type='random'):
+    """
+    生成随机姓名，num指定生成数量，type指定生成类型
+    """
     name_list = []
     name_data:dict = read_json_file(NAME_DATA)
     if type == 'random':
@@ -409,6 +412,10 @@ def set_name(message_info):
 
 
 def get_coc_card(num=1):
+    """
+    生成指定数量的COC人物卡
+    :return [dict]
+    """
     if num > 10 or num < 1:
         num = 1
     card_list = []
@@ -1161,6 +1168,93 @@ def temporary_insane():
         return '疯狂发作——临时症状\n' + result
     else:
         return '疯狂发作——临时症状\n' + result.replace('[1d10]', str(get_dice_point(1, 10)))
+
+
+def player_card(message_info: dict):
+    raw = message_info[3:].strip()
+    # 匹配指令和卡名，含有空格亦可处理
+    pattern = re.compile('^(new|tag|list|show|nn|del) *(.*)')
+    match = re.match(pattern, raw)
+    if match:
+        type, name = match.groups()
+    else:
+        return """
+    角色卡：.pc 
+    每名用户最多可同时保存16张角色卡
+    .pc new ([卡名]) //省略卡名将生成一张COC7模板的随机姓名卡
+    .pc tag ([卡名]) //为当前群绑定指定卡，为空则解绑使用默认卡
+    .pc show ([卡名]) //展示指定卡所有记录的属性，为空则展示当前卡
+    .pc nn [新卡名] //重命名当前卡，不允许重名
+    .pc del [卡名] //删除指定卡
+    .pc list //列出全部角色卡
+    """
+    QQ = message_info['sender_qq']
+    data: dict = read_json_file(DICE_DATA)
+    user_data:dict = data[str(QQ)]
+    card_names = user_data['card'].keys()
+
+    if type == 'new':
+        if len(card_names) > 20:
+            return '角色卡过多，请先删除部分角色卡'
+        if not name:
+            # 生成一张随机姓名COC卡
+            name = get_random_name()
+            user_data['card'][name] = get_coc_card()[0]
+        else:
+            user_data['card'][name] = {}
+
+    elif type == 'tag':
+        # 绑定指定角色卡
+        if not name:
+            user_data['current_card'] = 'default'
+        else:
+            if name not in card_names:
+                return '没有该角色卡'
+            user_data['current_card'] = name
+
+    elif type == 'show':
+        if not name:
+            # 展示当前卡属性
+            current_card_name = user_data['current_card']
+            card = user_data['card'][current_card_name]
+            trans_tab = str.maketrans(',', ' ', " '{}")
+            return '当前卡(' + current_card_name + ')属性\n' + str(card).translate(trans_tab)
+        else:
+            if name not in card_names:
+                return '没有该角色卡'
+            card = user_data['card'][name]
+            trans_tab = str.maketrans(',', ' ', " '{}")
+            return '当前卡(' + name + ')属性\n' + str(card).translate(trans_tab)
+
+    elif type == 'list':
+        return '所有角色卡:\n' + '\n'.join(card_names)
+
+    elif type == 'del':
+        # 删除指定角色卡
+        if not name:
+            return '需指定要删除的角色卡'
+        if name not in card_names:
+            return '没有该角色卡'
+        if name == 'default':
+            return '无法删除默认卡'
+        del user_data['card'][name]
+
+    elif type == 'nn':
+        if not name:
+            return '需指定新名称'
+        if name in card_names:
+            return '与已有卡重名'
+        current_card_name = user_data['current_card']
+        if current_card_name == 'default':
+            return '无法对默认卡重命名'
+        card = user_data['card'][current_card_name]
+        # 删去旧卡并插入新卡以实现重命名
+        del user_data['card'][current_card_name]
+        user_data['current_card'] = name
+        user_data['card'][name] = card
+
+    with open(DICE_DATA, 'w') as f:
+        dump(data, f)
 
 
 def draw_card(message_info: dict):
