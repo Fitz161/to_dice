@@ -18,12 +18,11 @@ def get_message(message_queue: Queue):
         if message_info['is_at_bot']:
             #bot被at后始终会响应命令，不受/bot off限制，会受listen_at群属性限制
             message_info['message'] = message_info['message'][11 + len(str(message_info['bot_qq'])):].strip()
-            if message_info['message'][1:] == 'bot on':
+            if message_info['message'][1:].startswith('bot on'):
                 bot_on(message_info, is_active)
+                return None
             return message_info
-        elif not message_info['message']:
-            return
-        elif message_info['message'][1:] == 'bot on':
+        elif message_info['message'][1:].startswith('bot on'):
             bot_on(message_info, is_active)
             return None
         if message_info['group_qq'] in black_list or message_info['sender_qq'] in black_list or is_active == False:
@@ -41,6 +40,7 @@ def get_message(message_queue: Queue):
             elif message_info['is_group_ban']:
                 event_handle.group_ban(message_info)
             return None
+        # 好友请求消息处理
         elif message_info['is_request']:
             if message_info['is_friend_add']:
                 event_handle.friend_add_request(message_info)
@@ -55,7 +55,6 @@ def extract_message(message: dict):
     message_type = message.get('message_type')
     notice_type = message.get('notice_type')
     request_type = message.get('request_type')
-    #message_info['message_id'] = message.get('message_id') if message.get('message_id') else 0
     message_info['is_message'] = True if post_type == 'message' else False
     message_info['is_notice'] = True if post_type == 'notice' else False
     message_info['is_request'] = True if post_type == 'request' else False
@@ -63,7 +62,8 @@ def extract_message(message: dict):
     message_info['is_private'] = True if message_type == 'private' else False
     message_info['is_anonymous'] = True if message.get('anonymous') else False
     message_info['flag'] = message.get('flag')
-    message_info['message'] = message.get('message')
+    message_info['message'] = message.get('message') if message.get('message') else ''
+    message_info['message_id'] = message.get('message_id') if message.get('message_id') else 0
     message_info['group_qq'] = message.get('group_id')
     message_info['sender_qq'] = message.get('user_id')
     message_info['sub_type'] = message.get('sub_type')
@@ -149,28 +149,30 @@ def get_black_active(message_info):
     if str(group_qq) not in active_dict.keys():
         active_dict.setdefault(str(group_qq), {'active': True, 'observer': True, 'entertain_mode': True,
                                                'jrrp': True, 'welcome': True, 'listen_at': True,
-                                               'deck': True, 'draw': True, 'debug': True, 'log' : False})
+                                               'deck': True, 'draw': True, 'debug': True,
+                                               'log' : False, 'recall': False})
     is_active = active_dict[str(group_qq)]['active']
     with open(ACTIVE_PATH, 'w') as f:
         dump(active_dict, f)
     return black_list, is_active
 
 
-def set_active(message_info, b:bool):
+def set_active(message_info, b:bool, key='active'):
     """初始化群设置"""
     if not message_info['is_group']:
         return
-    from bot_command.event_handle import get_group_admin
-    if message_info['sender_qq'] not in get_group_admin(message_info):
-        return
+    # from bot_command.event_handle import get_group_admin
+    # if message_info['sender_qq'] not in get_group_admin(message_info):
+    #     return
     with open(ACTIVE_PATH) as f:
         active_dict: dict = load(f)
     group_qq = message_info['group_qq']
     if str(group_qq) not in active_dict.keys():
         active_dict.setdefault(str(group_qq), {'active': True, 'observer': True, 'entertain_mode' : True,
                                                'jrrp': True, 'welcome' : True, 'listen_at' : True,
-                                               'deck' : True, 'draw' : True, 'debug' : True})
-    active_dict[str(group_qq)]['active'] = b
+                                               'deck' : True, 'draw' : True, 'debug' : True,
+                                               'log' : False, 'recall': False})
+    active_dict[str(group_qq)][key] = b
     with open(ACTIVE_PATH, 'w') as f:
         dump(active_dict, f)
 
@@ -197,9 +199,11 @@ def get_nickname(message):
     #group_qq = message.get('group_id')
     QQ = message.get('user_id')
     data:dict = read_json_file(DICE_DATA)
+    # 初始化用户信息
     if str(QQ) not in data.keys():
         data.setdefault(str(QQ), {'nickname' : '', 'set' : 100, 'card' : {'default' : {}},
                                   'current_card' : 'default', 'favorability' : 0})
+    # 无昵称时获取并添加昵称
     nickname:str = data[str(QQ)]['nickname']
     if not nickname:
         if not message.get('sender'):
@@ -210,8 +214,8 @@ def get_nickname(message):
             card = None
         nickname = card if card else message['sender']['nickname']
         data[str(QQ)]['nickname'] = nickname
-    with open(DICE_DATA, 'w') as f:
-        dump(data, f)
+        with open(DICE_DATA, 'w') as f:
+            dump(data, f)
     return nickname
 
 
@@ -273,7 +277,7 @@ def log_handle(message_info):
             send_string = BOT_NAME + '日志记录已经暂停了'
         else:
             change_json_file(ACTIVE_PATH, group_qq, 'log', False)
-            send_string = BOT_NAME + '暂停记录日志，可使用.log off恢复记录'
+            send_string = BOT_NAME + '暂停记录日志，可使用.log on恢复记录'
     elif message[:3] == 'log' and command == 'end':
         if os.path.exists(log_path):
             log_name = str(group_qq) +strftime("_%Y_%m_%d_%H_%M_%S", localtime())
