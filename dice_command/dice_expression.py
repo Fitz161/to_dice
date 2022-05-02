@@ -3,7 +3,7 @@ from random import randint
 
 from bot_command.command import read_json_file, send_private_msg, get_group_name
 from config import DICE_DATA, ACTIVE_PATH, OB_DATA
-
+# from dice_command.dot_command import express
 
 def r_expression(message_info):
     """对所有掷骰表达式的处理函数"""
@@ -69,7 +69,10 @@ def r_expression(message_info):
             if not is_enable_ob:
                 send_private_msg(send_msg, QQ)
             else:
-                ob_list:list = read_json_file(OB_DATA).get(str(group_qq))
+                try:
+                    ob_list: list = read_json_file(OB_DATA)[str(group_qq)]
+                except:
+                    ob_list = []
                 ob_list.append(QQ) if QQ not in ob_list else None
                 for QQ in ob_list:
                     send_private_msg(send_msg, QQ)
@@ -102,7 +105,10 @@ def r_expression(message_info):
                 if not is_enable_ob:
                     send_private_msg(send_msg, QQ)
                 else:
-                    ob_list: list = read_json_file(OB_DATA).get(str(group_qq))
+                    try:
+                        ob_list: list = read_json_file(OB_DATA)[str(group_qq)]
+                    except:
+                        ob_list = []
                     ob_list.append(QQ) if QQ not in ob_list else None
                     for QQ in ob_list:
                         send_private_msg(send_msg, QQ)
@@ -127,7 +133,10 @@ def r_expression(message_info):
                 if not is_enable_ob:
                     send_private_msg(send_msg, QQ)
                 else:
-                    ob_list: list = read_json_file(OB_DATA).get(str(group_qq))
+                    try:
+                        ob_list: list = read_json_file(OB_DATA)[str(group_qq)]
+                    except:
+                        ob_list = []
                     ob_list.append(QQ) if QQ not in ob_list else None
                     for QQ in ob_list:
                         send_private_msg(send_msg, QQ)
@@ -236,42 +245,45 @@ def express(raw_str):
             msg_match = re.search(pattern3, msg_string[msg_offset:])
             type, times = exp_match.groups()
             times = 1 if not times else int(times)
+            # 1d100个位数是0，则十位取1-10，1d100个位数不是0，则十位取0-9
+            # 以保证掷骰区间为[1, 100], 于是 30[P=3] = 40
+            # 思路来自于OlivOS和赵骰
             if type == 'P':
                 punish_list = []
                 random_num = randint(1, 100)
                 for i in range(times):
-                    punish_list.append(randint(0, 10))
+                    punish_list.append(randint(0, 9))
                 msg_str = f'{random_num}[惩罚骰:'
                 for i in range(times):
                     msg_str += str(punish_list[i]) + ' '
-                max_num = max(punish_list)
+                punish_list.append(int(random_num / 10))
+                max_num = max(punish_list) # 从惩罚点数中选出最大的
                 msg_str = msg_str[:-1] + ']'
-                if max_num == 10:
-                    exp_str = '100'
-                elif max_num == 0:
-                    exp_str = '0'
-                elif max_num <= (random_num / 10):
-                    exp_str = f'{random_num}'
+                low_bit = random_num % 10
+                if low_bit == 0:
+                    result_num = (max_num + 1) * 10
                 else:
-                    exp_str = f'{max_num}{random_num % 10}'
+                    result_num = max_num * 10 + low_bit
+                # 取原结果和惩罚结果中的最大值, 上限为100（掷出100且惩罚骰为9会出现110结果）
+                exp_str = str(min(max(result_num, random_num), 100))
             elif type == 'B':
                 reward_list = []
                 random_num = randint(1, 100)
                 for i in range(times):
-                    reward_list.append(randint(0, 10))
+                    reward_list.append(randint(0, 9))
                 msg_str = f'{random_num}[奖励骰:'
                 for i in range(times):
                     msg_str += str(reward_list[i]) + ' '
+                reward_list.append(int(random_num / 10))
                 min_num = min(reward_list)
                 msg_str = msg_str[:-1] + ']'
-                if min_num == 10:
-                    exp_str = '100'
-                elif min_num == 0:
-                    exp_str = '0'
-                elif min_num > (random_num / 10):
-                    exp_str = f'{random_num}'
+                low_bit = random_num % 10
+                if low_bit == 0:
+                    result_num = (min_num + 1) * 10
                 else:
-                    exp_str = f'{min_num}{random_num % 10}'
+                    result_num = min_num * 10 + low_bit
+                # 取原结果和奖励结果中的最小值
+                exp_str = str(min(result_num, random_num))
             else:
                 msg_str = exp_str = ''
             msg_string = msg_string.replace(msg_match.group(0), msg_str, 1)
