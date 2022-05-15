@@ -60,9 +60,11 @@ def group_recall(message_info:dict):
         res_data = response.json()['data']
         card = res_data['sender'].get('card') if res_data['sender'].get('card') else \
             res_data['sender'].get('nickname')
+        if card == BOT_NAME: #不重复BOT的recall消息
+            return
         message = res_data['message']
         send_string = f'欸嘿,{card}偷偷撤回了一条消息,别以为能逃出我的眼睛:{message}'
-        send_public_msg(send_string, group_qq)
+        send_public_msg(send_string[:200], group_qq)
 
 
 
