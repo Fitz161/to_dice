@@ -319,6 +319,7 @@ def random_name(message_info):
 def get_random_name(num=1, type='random'):
     """
     生成随机姓名，num指定生成数量，type指定生成类型
+    :return [str]
     """
     name_list = []
     name_data:dict = read_json_file(NAME_DATA)
@@ -452,9 +453,10 @@ def random_check(message_info):
     QQ = message_info['sender_qq']
     group_qq = message_info['group_qq']
     pattern = re.compile('([^0-9+*/-]+)([-+*/]?)(\d*)')
-    data: dict = read_json_file(DICE_DATA)
-    card: dict = data[str(QQ)]['card']['default']
-    set = read_json_file(DICE_DATA)[str(QQ)]['set']     #默认骰面数
+
+    user_data: dict = read_json_file(DICE_DATA)[str(QQ)]
+    card: dict = user_data['card'][user_data['current_card']]
+    set = user_data['set']     #默认骰面数
     data: dict = read_json_file(DATA_PATH)
     if group_qq in data['setcoc'].keys():
         set_coc = data['setcoc'][str(group_qq)]     #房规
@@ -463,7 +465,8 @@ def random_check(message_info):
         data['setcoc'][str(group_qq)] = 3
         with open(DATA_PATH, 'w') as f:
             dump(data, f)
-    if re.match('(\d+)([^0-9+*/-]*)', message) and not message.__contains__('#'):
+    # 普通检定指令，不含多次检定和奖惩骰
+    if re.match('(\d+)([^0-9+*/-]*)', message) and not re.search('[#bp]', message):
         #match从头开始匹配，当命令含有#时也会匹配到，因此需要去除这种情况
         check_point, reason = re.match('(\d+)([^0-9]*)', message).groups()
         if reason:
@@ -484,8 +487,11 @@ def random_check(message_info):
         else:
             return f'{dice_name}{nickname}进行检定: D{set}={point}/' \
                    f'{check_point} [{result}] 成功了呢，真不错呢'
+    # 困难检定指令
     elif message[:2] == '困难':
         match = re.search(pattern, message[2:])
+        if not match:
+            return
         # 判断是否有掷骰原因，并将原因分离出来
         if message[match.end():]:
             dice_name = '由于 ' + message[match.end():]
@@ -517,8 +523,11 @@ def random_check(message_info):
         else:
             return f'{dice_name}{nickname}进行{property}检定: D{set}={point}/' \
                    f'{check_point} [{result[-2:]}] 成功了呢，真不错呢'
+    # 极难检定指令
     elif message[:2] == '极难':
         match = re.search(pattern, message[2:])
+        if not match:
+            return
         property, operator, point = map(str.strip, match.groups())
         if property == '理智':
             property = 'san'
@@ -550,72 +559,14 @@ def random_check(message_info):
         else:
             return f'{dice_name}{nickname}进行{property}检定: D{set}={point}/' \
                    f'{check_point} [{result[-2:]}] 成功了呢，真不错呢'
-    elif not message.__contains__('#'):
-        match = re.search(pattern, message)
-        property, operator, point = map(str.strip, match.groups())
-        if property == '理智':
-            property = 'san'
-        # 判断是否有掷骰原因,并将原因分离出来
-        oper_num, point = point, None
-        #有运算符时oper_num即为待运算的操作数,否则即为通过参数指定的成功率
-        if message[match.end():]:
-            dice_name = '由于 ' + message[match.end():]
-        else:
-            dice_name = ''
-        if property in card.keys():
-            point = card[property]
-        elif property.upper() in DICE_SYNONYMS.keys() and card.get(DICE_SYNONYMS[property.upper()]):
-            point = card[DICE_SYNONYMS[property.upper()]]
-            property = DICE_SYNONYMS[property.upper()]
-        else:
-            #不存在该属性时才会进入
-            if operator and oper_num:
-            #只有运算符和操作数,没有属性值
-                return f'未设定{property}成功率，请先.st {property} 技能值 或查看.help rc'
-            elif not operator and not oper_num:
-            #无需运算
-                return f'未设定{property}成功率，请先.st {property} 技能值 或查看.help rc'
-            elif operator and not oper_num:
-            #只有操作数,此时将操作数看作检定原因
-                dice_name = operator + dice_name
-            else:
-            #此时通过参数形式指定了成功率,且此时由oper_num保存
-                pass
-        try:
-            if operator == '+':
-                check_point = int(point) + int(oper_num)
-            elif operator == '-':
-                check_point = int(point) - int(oper_num)
-            elif operator == '*':
-                check_point = int(point) * int(oper_num)
-            elif operator == '/':
-                check_point = round(int(point) / int(oper_num))
-            else:
-                #此时无运算符,point不为None则表明属性存在并且point为属性值,否则表明通过参数指定了成功率,且保存于oper_num
-                check_point = int(point) if point else int(oper_num)
-        except:
-            return '操作数和操作符间不能有空格'
-        point = random.randint(1, set)
-        result = point_check(check_point, point, set_coc)
-        if result == '大成功':
-            return f'{dice_name}{nickname}进行{property}{operator}{oper_num}检定: D{set}={point}/' \
-                   f'{check_point} [{result}] 竟然成功了，创造出奇迹了呢'
-        elif result == '失败':
-            return f'{dice_name}{nickname}进行{property}{operator}{oper_num}检定: D{set}={point}/' \
-                   f'{check_point} [{result}] 失败了呢，真是遗憾呀'
-        elif result == '大失败':
-            return f'{dice_name}{nickname}进行{property}{operator}{oper_num}检定: D{set}={point}/' \
-                   f'{check_point} [{result}] 啊，大失败，看来这次没有神明眷顾呢'
-        else:
-            return f'{dice_name}{nickname}进行{property}{operator}{oper_num}检定: D{set}={point}/' \
-                   f'{check_point} [{result}] 成功了，真不错呢'
+    # 含多次检定和奖惩骰的检定指令
     else:
-        #判断奖励骰和轮数的次数
-        multi_match = re.search('(\d{0,1})#([bpBP])(\d{0,1})', message)
+        #判断奖惩骰和轮数的次数,至少出现其中一个,且B/P在后
+        multi_match = re.search('(\d{0,1})#{0,1}([bpBP]{0,1})(\d{0,1})', message)
+        # 检定次数，奖惩骰类型，奖惩骰个数
         dice_times, type, times = multi_match.groups()
         dice_times = 1 if not dice_times else dice_times
         times = '1' if not times else times
-        type = type.upper()
 
         message = message[multi_match.end():]
         match = re.search(pattern, message)
@@ -665,7 +616,11 @@ def random_check(message_info):
 
         send_string = f'{dice_name}{nickname}进行{dice_times}次{property}{operator}{oper_num}检定:\n'
         for index in range(int(dice_times)):
-            point_str, point = express(type + times)
+            # 出现奖惩骰，便构造B/P + times， 不然使用D100
+            if type:
+                point_str, point = express(type + times)
+            else:
+                point_str, point = express('D')
             print(point)
             if point is None:
                 return point_str
@@ -679,10 +634,11 @@ def st_handle(message_info):
     nickname = message_info['nickname']
     QQ = message_info['sender_qq']
     data: dict = read_json_file(DICE_DATA)
-    card:dict = data[str(QQ)]['card']['default']
+    card_name = data[str(QQ)]['current_card_name']
+    card:dict = data[str(QQ)]['card'][card_name]
     print(message)
     if message == 'clr' or message == 'clear':
-        data[str(QQ)]['card']['default'] = {}
+        data[str(QQ)]['card'][card_name] = {}
         with open(DICE_DATA, 'w') as f:
             dump(data, f)
         return f'已删除{nickname}当前角色卡的所有属性'
@@ -709,12 +665,12 @@ def st_handle(message_info):
                 property = 'san'
             if property in card.keys():
                 #使用del关键字直接删除字典中的键值对
-                del data[str(QQ)]['card']['default'][property]
+                del data[str(QQ)]['card'][card_name][property]
                 with open(DICE_DATA, 'w') as f:
                     dump(data ,f)
                 return f'已删除{nickname}的{property}属性'
             elif property.upper() in DICE_SYNONYMS.keys() and card.get(DICE_SYNONYMS[property.upper()]):
-                del data[str(QQ)]['card']['default'][DICE_SYNONYMS[property.upper()]]
+                del data[str(QQ)]['card'][card_name][DICE_SYNONYMS[property.upper()]]
                 with open(DICE_DATA, 'w') as f:
                     dump(data, f)
                 return f'已删除{nickname}的{DICE_SYNONYMS[property.upper()]}({property})属性'
@@ -825,7 +781,8 @@ def san_check(message_info):
     group_qq = message_info['group_qq']
     QQ = message_info['sender_qq']
     data: dict = read_json_file(DICE_DATA)
-    card: dict = data[str(QQ)]['card']['default']
+    card_name = data[str(QQ)]['current_card']
+    card: dict = data[str(QQ)]['card'][card_name]
     if re.search('([^0-9/dD ])', message):
         match = re.search('([^0-9/dD ])', message)
         dice_name = '由于' + message[match.start():]
@@ -898,8 +855,8 @@ def san_check(message_info):
                         suffix = ''
                     if not is_give_san:
                         with open(DICE_DATA, 'w') as f:
-                            data[str(QQ)]['card']['default']['理智'] = san
-                            data[str(QQ)]['card']['default']['san'] = san
+                            data[str(QQ)]['card'][card_name]['理智'] = san
+                            data[str(QQ)]['card'][card_name]['san'] = san
                             dump(data, f)
                     if fail_dice_num is None:
                         return f'{dice_name}{nickname}进行理智检定(San Check):\n D100={point}/' \
@@ -919,8 +876,8 @@ def san_check(message_info):
                         suffix = ''
                     if not is_give_san:
                         with open(DICE_DATA, 'w') as f:
-                            data[str(QQ)]['card']['default']['理智'] = san
-                            data[str(QQ)]['card']['default']['san'] = san
+                            data[str(QQ)]['card'][card_name]['理智'] = san
+                            data[str(QQ)]['card'][card_name]['san'] = san
                             dump(data, f)
                     if fail_dice_num is None:
                         return f'{dice_name}{nickname}进行理智检定(San Check):\n D100={point}/' \
@@ -940,8 +897,8 @@ def san_check(message_info):
                         suffix = ''
                     if not is_give_san:
                         with open(DICE_DATA, 'w') as f:
-                            data[str(QQ)]['card']['default']['理智'] = san
-                            data[str(QQ)]['card']['default']['san'] = san
+                            data[str(QQ)]['card'][card_name]['理智'] = san
+                            data[str(QQ)]['card'][card_name]['san'] = san
                             dump(data, f)
                     if suc_dice_num is None:
                         return f'{dice_name}{nickname}进行理智检定(San Check):\n D100={point}/' \
@@ -1171,23 +1128,21 @@ def temporary_insane():
 
 
 def player_card(message_info: dict):
-    raw = message_info[3:].strip()
+    raw = message_info['message'][3:].strip()
     # 匹配指令和卡名，含有空格亦可处理
     pattern = re.compile('^(new|tag|list|show|nn|del) *(.*)')
     match = re.match(pattern, raw)
     if match:
         type, name = match.groups()
     else:
-        return """
-    角色卡：.pc 
-    每名用户最多可同时保存16张角色卡
-    .pc new ([卡名]) //省略卡名将生成一张COC7模板的随机姓名卡
-    .pc tag ([卡名]) //为当前群绑定指定卡，为空则解绑使用默认卡
-    .pc show ([卡名]) //展示指定卡所有记录的属性，为空则展示当前卡
-    .pc nn [新卡名] //重命名当前卡，不允许重名
-    .pc del [卡名] //删除指定卡
-    .pc list //列出全部角色卡
-    """
+        return '角色卡：.pc\
+    每名用户最多可同时保存16张角色卡\
+    .pc new ([卡名]) //省略卡名将生成一张COC7模板的随机姓名卡\
+    .pc tag ([卡名]) //为当前群绑定指定卡，为空则解绑使用默认卡\
+    .pc show ([卡名]) //展示指定卡所有记录的属性，为空则展示当前卡\
+    .pc nn [新卡名] //重命名当前卡，不允许重名\
+    .pc del [卡名] //删除指定卡\
+    .pc list //列出全部角色卡'
     QQ = message_info['sender_qq']
     data: dict = read_json_file(DICE_DATA)
     user_data:dict = data[str(QQ)]
@@ -1196,21 +1151,27 @@ def player_card(message_info: dict):
     if type == 'new':
         if len(card_names) > 20:
             return '角色卡过多，请先删除部分角色卡'
+        if name in card_names:
+            return '已存在该名称的角色卡'
         if not name:
             # 生成一张随机姓名COC卡
-            name = get_random_name()
+            name = get_random_name()[0]
             user_data['card'][name] = get_coc_card()[0]
+            send_msg = '生成随机姓名COC卡:\n' + name
         else:
             user_data['card'][name] = {}
+            send_msg = '生成新角色卡:\n' + name
 
     elif type == 'tag':
         # 绑定指定角色卡
         if not name:
             user_data['current_card'] = 'default'
+            send_msg = '绑定当前角色卡为default'
         else:
             if name not in card_names:
                 return '没有该角色卡'
             user_data['current_card'] = name
+            send_msg = '绑定当前角色卡为\n' + name
 
     elif type == 'show':
         if not name:
@@ -1238,6 +1199,7 @@ def player_card(message_info: dict):
         if name == 'default':
             return '无法删除默认卡'
         del user_data['card'][name]
+        send_msg = '已删除角色卡：\n' + name
 
     elif type == 'nn':
         if not name:
@@ -1252,9 +1214,11 @@ def player_card(message_info: dict):
         del user_data['card'][current_card_name]
         user_data['current_card'] = name
         user_data['card'][name] = card
+        send_msg = '已将当前角色卡(' + current_card_name + ')重名为：\n' + name
 
     with open(DICE_DATA, 'w') as f:
         dump(data, f)
+    return send_msg
 
 
 def draw_card(message_info: dict):
