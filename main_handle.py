@@ -18,6 +18,7 @@ def get_message(message_queue: Queue):
         if message_info['is_at_bot']:
             #bot被at后始终会响应命令，不受/bot off限制，会受listen_at群属性限制
             message_info['message'] = message_info['message'][11 + len(str(message_info['bot_qq'])):].strip()
+            if not message_info['message']: return
             if message_info['message'][1:].startswith('bot on'):
                 bot_on(message_info, is_active)
                 return None
@@ -214,8 +215,12 @@ def get_nickname(message):
             card = None
         nickname = card if card else message['sender']['nickname']
         data[str(QQ)]['nickname'] = nickname
-        with open(DICE_DATA, 'w') as f:
-            dump(data, f)
+    # 保持昵称和绑定角色卡昵称一致
+    card = data[str(QQ)]['current_card']
+    if card != 'default':
+        data[str(QQ)]['nickname'] = card
+    with open(DICE_DATA, 'w') as f:
+        dump(data, f)
     return nickname
 
 
