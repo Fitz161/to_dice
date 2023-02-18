@@ -40,6 +40,9 @@ def get_message(message_queue: Queue):
                 event_handle.add_black_list(message_info)
             elif message_info['is_group_ban']:
                 event_handle.group_ban(message_info)
+            elif message_info['is_poke']:
+                message_info['message'] = '.r'
+                return message_info
             return None
         # 好友请求消息处理
         elif message_info['is_request']:
@@ -80,6 +83,7 @@ def extract_message(message: dict):
     message_info['is_group_ban'] = True if notice_type == 'group_ban' \
                                            and message_info['sender_qq'] == message_info['bot_qq'] else False
     message_info['is_group_add'] = True if request_type == 'group' and message.get('sub_type') == 'invite' else False
+    message_info['is_poke'] = True if notice_type == 'notify' and message.get('sub_type') == 'poke' else False
     return message_info
 
 
