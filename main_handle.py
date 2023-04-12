@@ -93,6 +93,8 @@ def handle_message(message_queue: Queue):
             message_info: dict = get_message(message_queue)
             if message_info:
                 message = message_info['message']
+                if message == '':
+                    continue
                 if not MULTI_THREADING:
                     if message[:2] in command_dict.keys():
                         command_dict.get(message[:2])(message_info)
