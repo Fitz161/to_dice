@@ -72,14 +72,14 @@ def send_public_msg(send_string, group_qq):
 
 
 def send_long_msg(message_info, send_string:str):
-    if send_string.__contains__('|||'):
-        message_list = send_string.split('|||')
+    if send_string.__contains__('^^'):
+        message_list = send_string.split('^^')
         for message in message_list:
             if message_info['is_private']:
                 send_private_msg(message, message_info['sender_qq'])
             elif message_info['is_group']:
                 send_public_msg(message, message_info['group_qq'])
-            sleep(PAUSE_TIME * 2)
+        sleep(PAUSE_TIME * 2)
     else:
         for index in range(0, round((len(send_string) + 99) / 100)):
             #限制每次发送文本字数不超过100字，总的发送次数不超过5+1次
@@ -130,6 +130,24 @@ def get_one_page(url, type='content'):
     except requests.RequestException as e:
         print("request failed: time out", e)
         return "time_out"
+
+
+def text_to_img(text, font_type=2, font_size=100, alpha=None):
+    #将text文本添加到背景图片上，返回图片CQ码
+    image_names = list(os.walk(IMAGE_PATH))[0][2]
+    img_path = IMAGE_PATH + choice(image_names)
+    img = Image.open(img_path)
+    font = ImageFont.truetype(FONT_DICT[str(font_type)], font_size)
+    if alpha != None and isinstance(alpha, int):
+        img.putalpha(Image.new('L', img.size, color=ALPHA_QUALITY))
+    draw = ImageDraw.Draw(img)
+    text_list = text.split('\n')
+    for index, text in enumerate(text_list):
+        draw.text((200, (font_size + 20) * (index + 2)), text, (0, 0, 0), font)
+    pic_path = SAVE_PATH + threading.current_thread().name + '.png'
+    img = img.resize((int(img.size[0] * 0.5), int(img.size[1] * 0.5)), Image.ANTIALIAS)
+    img.save(pic_path)
+    return f"[CQ:image,file=file://{pic_path}]"
 
 
 from bot_command.dot_command import *
